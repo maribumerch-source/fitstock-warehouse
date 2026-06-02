@@ -2,7 +2,7 @@
   "name": "FitStock Warehouse",
   "short_name": "FitStock",
   "description": "Shopify & TikTok dual-channel inventory scanner for warehouse workers",
-  "start_url": "/index.html",
+  "start_url": "/fitstock-warehouse/index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0a",
