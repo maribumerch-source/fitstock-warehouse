@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FitStock"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>FitStock Warehouse</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icons/icon-192.png"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0f0f0;--muted:#888;--dim:#555;
+  --green:#00e676;--green-dim:rgba(0,230,118,0.12);
+  --pink:#ff4d8d;--pink-dim:rgba(255,77,141,0.12);
+  --amber:#ffab00;--amber-dim:rgba(255,171,0,0.12);
+  --red:#ff3d3d;--red-dim:rgba(255,61,61,0.14);
+  --blue:#40c4ff;--blue-dim:rgba(64,196,255,0.1);
+  --gold:#ffd600;--gold-dim:rgba(255,214,0,0.12);
+  --r:10px;--r-sm:6px;
+  --font-mono:'Space Mono',monospace;--font:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100dvh;height:100vh}
+.statusbar-pad{height:calc(var(--safe-top)+8px);background:var(--bg);flex-shrink:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:18px;height:18px;fill:#0a0a0a}
+.topbar h1{font-family:var(--font-mono);font-size:15px;font-weight:700;letter-spacing:-.3px}
+.topbar h1 span{color:var(--green)}
+.topbar-right{display:flex;align-items:center;gap:6px}
+.sync-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--muted);font-family:var(--font);display:flex;align-items:center;gap:5px;cursor:pointer}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.admin-topbtn{background:var(--gold-dim);border:1px solid rgba(255,214,0,0.3);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);font-family:var(--font);display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:600}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 16px 8px}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 2px calc(var(--safe-bottom)+8px);flex-shrink:0}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--dim);font-size:9px;letter-spacing:.2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active{color:var(--green)}
+
+/* ── WORKER PROFILE BAR ── */
+.worker-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:14px}
+.worker-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.worker-info{flex:1}
+.worker-name{font-size:13px;font-weight:500}
+.worker-role{font-size:10px;color:var(--muted)}
+.worker-switch{font-size:11px;color:var(--dim);cursor:pointer;text-decoration:underline}
+
+/* ── WORKER LOGIN SCREEN ── */
+#worker-login{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#worker-login.hidden{display:none}
+.wl-logo{width:56px;height:56px;background:var(--green);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.wl-logo svg{width:30px;height:30px;fill:#0a0a0a}
+.wl-title{font-family:var(--font-mono);font-size:20px;font-weight:700;margin-bottom:4px}
+.wl-sub{font-size:13px;color:var(--muted);margin-bottom:28px;text-align:center}
+.wl-worker-list{width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.wl-worker-btn{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .12s;width:100%}
+.wl-worker-btn:active{border-color:var(--border2)}
+.wl-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.wl-worker-name{font-size:14px;font-weight:500;text-align:left;flex:1}
+.wl-worker-role{font-size:11px;color:var(--muted);text-align:left}
+.wl-arrow{font-size:18px;color:var(--dim)}
+
+/* ── PIN PAD ── */
+#pin-screen{position:fixed;inset:0;background:var(--bg);z-index:510;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#pin-screen.hidden{display:none}
+.pin-title{font-size:16px;font-weight:500;margin-bottom:4px}
+.pin-sub{font-size:12px;color:var(--muted);margin-bottom:24px}
+.pin-dots{display:flex;gap:14px;margin-bottom:28px}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--dim);transition:all .15s}
+.pin-dot.filled{background:var(--green);border-color:var(--green)}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.pin-err{font-size:12px;color:var(--red);height:18px;margin-bottom:8px;text-align:center}
+.pin-pad{display:grid;grid-template-columns:repeat(3,80px);gap:12px}
+.pin-key{width:80px;height:80px;border-radius:50%;background:var(--surface);border:1px solid var(--border2);font-size:24px;font-family:var(--font-mono);font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:background .1s}
+.pin-key:active{background:var(--surface2)}
+.pin-key.del{font-size:18px;color:var(--muted)}
+.pin-key.empty{background:none;border:none;cursor:default}
+.pin-back{margin-top:20px;font-size:12px;color:var(--dim);cursor:pointer}
+
+/* ── CHANNEL TOGGLE ── */
+.ch-toggle{display:flex;gap:6px;margin-bottom:16px}
+.ch-btn{flex:1;padding:10px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:var(--font);font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .15s;font-weight:500;-webkit-tap-highlight-color:transparent}
+.ch-btn.shopify.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.ch-btn.tiktok.active{background:var(--pink-dim);border-color:var(--pink);color:var(--pink)}
+.ch-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── ORDER MODE ── */
+.order-mode-banner{background:var(--blue-dim);border:1px solid rgba(64,196,255,0.25);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.order-mode-banner svg{width:16px;height:16px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.order-mode-info{flex:1}
+.order-mode-label{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.06em}
+.order-mode-val{font-size:13px;font-weight:500;margin-top:1px}
+.order-mode-end{font-size:11px;color:var(--red);cursor:pointer;flex-shrink:0}
+.order-start-btn{width:100%;padding:12px;background:var(--blue-dim);border:1px solid rgba(64,196,255,0.3);border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:600;color:var(--blue);cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* ── SCAN AREA ── */
+.scan-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 16px;margin-bottom:14px;text-align:center}
+.scan-icon-wrap{width:64px;height:64px;border-radius:50%;background:var(--green-dim);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;animation:scan-pulse 2s ease-in-out infinite}
+.scan-icon-wrap.tiktok{background:var(--pink-dim);border-color:var(--pink)}
+@keyframes scan-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.scan-icon-wrap svg{width:28px;height:28px;stroke:var(--green);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scan-icon-wrap.tiktok svg{stroke:var(--pink)}
+.scan-who{font-size:11px;color:var(--muted);margin-bottom:2px}
+.scan-who span{color:var(--text);font-weight:500}
+.scan-ch-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.scan-ch-label.shopify{color:var(--green)}.scan-ch-label.tiktok{color:var(--pink)}
+.scan-input-wrap{display:flex;gap:8px;margin-top:12px}
+.scan-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px 14px;font-family:var(--font-mono);font-size:13px;color:var(--text);outline:none;transition:border-color .15s}
+.scan-input:focus{border-color:var(--green)}.scan-input.tiktok:focus{border-color:var(--pink)}
+.scan-go{background:var(--green);border:none;border-radius:var(--r-sm);padding:0 16px;font-family:var(--font);font-size:13px;font-weight:600;color:#0a0a0a;cursor:pointer}
+.scan-go.tiktok{background:var(--pink)}
+.demo-btn{width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px;font-family:var(--font);font-size:12px;color:var(--muted);cursor:pointer}
+
+/* ── ALERT MODAL (wrong channel / wrong product) ── */
+#alert-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px}
+#alert-modal.hidden{display:none}
+.alert-modal-card{background:var(--surface);border-radius:var(--r);width:100%;max-width:340px;overflow:hidden}
+.alert-modal-header{padding:20px 20px 14px;display:flex;align-items:flex-start;gap:14px}
+.alert-modal-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.alert-modal-icon.red{background:var(--red-dim);border:1px solid rgba(255,61,61,.3)}
+.alert-modal-icon.amber{background:var(--amber-dim);border:1px solid rgba(255,171,0,.3)}
+.alert-modal-icon svg{width:22px;height:22px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.alert-modal-icon.red svg{stroke:var(--red)}.alert-modal-icon.amber svg{stroke:var(--amber)}
+.alert-modal-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.alert-modal-title.red{color:var(--red)}.alert-modal-title.amber{color:var(--amber)}
+.alert-modal-body{font-size:13px;color:var(--muted);line-height:1.6}
+.alert-modal-detail{background:var(--surface2);margin:0 20px 16px;border-radius:var(--r-sm);padding:10px 14px;font-size:12px}
+.alert-modal-detail-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.alert-modal-detail-row:last-child{margin-bottom:0}
+.alert-modal-detail-row .lbl{color:var(--muted)}
+.alert-modal-detail-row .val{font-weight:500;font-family:var(--font-mono);font-size:11px}
+.alert-modal-detail-row .val.wrong{color:var(--red)}.alert-modal-detail-row .val.right{color:var(--green)}
+.alert-modal-actions{display:flex;gap:8px;padding:0 20px 20px}
+.alert-modal-dismiss{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer}
+.alert-modal-override{flex:1;padding:12px;background:var(--red-dim);border:1px solid rgba(255,61,61,.3);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;font-weight:600;color:var(--red);cursor:pointer}
+
+/* ── SCAN FEED ── */
+.scan-feed{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.scan-entry{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.scan-entry-ch{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:99px;flex-shrink:0}
+.scan-entry-ch.shopify{background:var(--green-dim);color:var(--green)}.scan-entry-ch.tiktok{background:var(--pink-dim);color:var(--pink)}
+.scan-entry-info{flex:1;min-width:0}
+.scan-entry-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scan-entry-who{font-size:10px;color:var(--muted);margin-top:1px}
+.scan-entry-right{flex-shrink:0;text-align:right}
+.scan-entry-count{font-family:var(--font-mono);font-size:12px;color:var(--green);font-weight:700}
+.scan-entry-time{font-size:10px;color:var(--dim)}
+.scan-entry.flagged{border-color:rgba(255,61,61,.3);background:var(--red-dim)}
+.scan-entry.flagged .scan-entry-count{color:var(--red)}
+.flag-badge{font-size:9px;font-weight:700;color:var(--red);background:var(--red-dim);border:1px solid rgba(255,61,61,.3);border-radius:4px;padding:1px 5px;margin-top:2px;display:inline-block}
+
+/* ── METRICS ── */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;right:0;width:36px;height:36px;border-radius:0 var(--r) 0 36px;opacity:.15}
+.metric-card.green::before{background:var(--green)}.metric-card.amber::before{background:var(--amber)}.metric-card.red::before{background:var(--red)}.metric-card.blue::before{background:var(--blue)}
+.metric-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.metric-val{font-family:var(--font-mono);font-size:24px;font-weight:700;line-height:1}
+.metric-val.green{color:var(--green)}.metric-val.amber{color:var(--amber)}.metric-val.red{color:var(--red)}.metric-val.blue{color:var(--blue)}
+.metric-sub{font-size:10px;color:var(--dim);margin-top:3px}
+
+/* ── SECTION ── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sec-action{font-size:11px;color:var(--green);cursor:pointer}
+
+/* ── PRODUCT CARDS ── */
+.prod-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;display:flex;align-items:center;gap:10px}
+.prod-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-supp{background:var(--blue)}.cat-appr{background:var(--pink)}.cat-accs{background:var(--amber)}
+.prod-info{flex:1;min-width:0}
+.prod-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-sku{font-family:var(--font-mono);font-size:10px;color:var(--dim);margin-top:1px}
+.prod-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.prod-count{font-family:var(--font-mono);font-size:17px;font-weight:700}
+.prod-count.green{color:var(--green)}.prod-count.amber{color:var(--amber)}.prod-count.red{color:var(--red)}
+.status-pill{font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:99px}
+.pill-ok{background:var(--green-dim);color:var(--green)}.pill-low{background:var(--amber-dim);color:var(--amber)}.pill-out{background:var(--red-dim);color:var(--red)}
+.mini-bar{height:3px;background:var(--border);border-radius:99px;margin-top:5px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:99px;transition:width .3s}
+
+/* ── SPLIT VIEW ── */
+.split-header{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.ch-stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px}
+.ch-stat-card .ch-name{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:6px}
+.ch-stat-card.shopify .ch-name{color:var(--green)}.ch-stat-card.tiktok .ch-name{color:var(--pink)}
+.ch-stat-nums{display:flex;flex-direction:column;gap:3px}
+.ch-stat-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.ch-stat-row span:last-child{font-family:var(--font-mono);font-weight:700;color:var(--text)}
+.split-prod-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;margin-bottom:5px}
+.split-prod-name{font-size:12px;font-weight:500;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.split-bars{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.split-bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:2px}
+.split-bar-label .count{font-family:var(--font-mono);font-weight:700}
+.split-bar-bg{height:3px;background:var(--border);border-radius:99px;overflow:hidden}
+.split-bar-fill{height:100%;border-radius:99px}
+.sb-shopify{background:var(--green)}.sb-tiktok{background:var(--pink)}
+
+/* ── ALLOCATE ── */
+.alloc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:8px}
+.alloc-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.alloc-meta{font-size:10px;color:var(--dim);font-family:var(--font-mono);margin-bottom:8px}
+.alloc-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.alloc-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:3px}
+.alloc-field.shopify label{color:var(--green)}.alloc-field.tiktok label{color:var(--pink)}
+.alloc-field input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 9px;font-family:var(--font-mono);font-size:15px;font-weight:700;color:var(--text);outline:none}
+.alloc-buffer{margin-top:7px;display:flex;justify-content:space-between;font-size:10px}
+.alloc-buffer-label{color:var(--muted)}
+.alloc-buffer-val{font-family:var(--font-mono);font-size:12px;font-weight:700}
+.buf-ok{color:var(--blue)}.buf-zero{color:var(--dim)}.buf-over{color:var(--red)}
+
+/* ── ALERTS ── */
+.alert-card{border-radius:var(--r);padding:11px 13px;margin-bottom:7px;display:flex;align-items:flex-start;gap:8px;border:1px solid}
+.alert-card.warn{background:var(--amber-dim);border-color:rgba(255,171,0,.3)}.alert-card.danger{background:var(--red-dim);border-color:rgba(255,61,61,.3)}.alert-card.info{background:var(--blue-dim);border-color:rgba(64,196,255,.2)}
+.alert-icon{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.alert-body{flex:1}
+.alert-source{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+.alert-card.warn .alert-source{color:var(--amber)}.alert-card.danger .alert-source{color:var(--red)}.alert-card.info .alert-source{color:var(--blue)}
+.alert-msg{font-size:12px;color:var(--muted)}
+.alert-dismiss{background:none;border:none;color:var(--dim);font-size:17px;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
+
+/* ── WORKER ROSTER (admin) ── */
+.worker-roster-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.roster-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.roster-info{flex:1}
+.roster-name{font-size:13px;font-weight:500}
+.roster-meta{font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-top:2px}
+.roster-scans{font-family:var(--font-mono);font-size:12px;color:var(--green);font-weight:700}
+.roster-del{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0}
+
+/* ── ORDER MODE MODAL ── */
+#order-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px}
+#order-modal.hidden{display:none}
+.order-modal-card{background:var(--surface);border-radius:var(--r);width:100%;max-width:360px;padding:20px}
+.order-modal-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.order-modal-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.order-field{margin-bottom:12px}
+.order-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+.order-field input,.order-field select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--font-mono);font-size:13px;color:var(--text);outline:none;-webkit-appearance:none}
+.order-field input:focus{border-color:var(--blue)}
+.order-items-list{background:var(--surface2);border-radius:var(--r-sm);padding:10px;margin-bottom:12px;max-height:140px;overflow-y:auto}
+.order-item-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+.order-item-row:last-child{margin-bottom:0}
+.order-item-sku{font-family:var(--font-mono);font-size:10px;color:var(--muted);flex:1}
+.order-item-del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:15px;padding:0}
+.order-add-item{display:flex;gap:6px;margin-bottom:12px}
+.order-add-item select{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px;font-size:12px;color:var(--text);-webkit-appearance:none}
+.order-add-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px 12px;font-size:12px;color:var(--text);cursor:pointer}
+.order-start-modal-btn{width:100%;padding:13px;background:var(--blue);border:none;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:700;color:#0a0a0a;cursor:pointer;margin-bottom:8px}
+.order-cancel-btn{width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:12px;color:var(--dim);cursor:pointer}
+.order-progress{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:12px}
+.order-progress-title{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.order-progress-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px}
+.order-progress-row:last-child{margin-bottom:0}
+.order-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px}
+.order-check.done{background:var(--green);border-color:var(--green);color:#0a0a0a}
+.order-check.pending{border-color:var(--amber)}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:calc(var(--safe-top)+60px);left:50%;transform:translateX(-50%) translateY(-8px);background:var(--surface2);border:1px solid var(--border2);border-radius:99px;padding:8px 16px;font-size:12px;color:var(--text);white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:700}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-green{border-color:var(--green)!important;color:var(--green)!important}
+.toast-red{border-color:var(--red)!important;color:var(--red)!important}
+.toast-gold{border-color:var(--gold)!important;color:var(--gold)!important}
+.toast-amber{border-color:var(--amber)!important;color:var(--amber)!important}
+
+/* ── MISC ── */
+.empty-state{text-align:center;padding:32px 20px;color:var(--dim);font-size:13px}
+.empty-state svg{width:36px;height:36px;stroke:var(--dim);fill:none;stroke-width:1.5;margin:0 auto 10px;display:block}
+.search-bar{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 13px;margin-bottom:12px}
+.search-bar svg{width:15px;height:15px;stroke:var(--dim);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.search-bar input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:13px;color:var(--text)}
+.search-bar input::placeholder{color:var(--dim)}
+.filter-chips{display:flex;gap:5px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.filter-chip{flex-shrink:0;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer}
+.filter-chip.active{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.export-btn{width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.export-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.db-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid;font-weight:600}
+.db-badge.connected{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.db-badge.local{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.rt-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+
+/* ── ADMIN PANEL ── */
+#admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px}
+#admin-overlay.hidden{display:none}
+.lock-icon{width:52px;height:52px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(255,214,0,0.4);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.lock-icon svg{width:24px;height:24px;stroke:var(--gold);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lock-title{font-family:var(--font-mono);font-size:16px;font-weight:700;margin-bottom:4px}
+.lock-sub{font-size:12px;color:var(--muted);margin-bottom:24px;text-align:center}
+.lock-input{width:100%;max-width:280px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);padding:13px 16px;font-family:var(--font-mono);font-size:16px;color:var(--text);outline:none;text-align:center;letter-spacing:.3em;margin-bottom:10px;transition:border-color .2s}
+.lock-input:focus{border-color:var(--gold)}
+.lock-input.shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.lock-btn{width:100%;max-width:280px;padding:13px;background:var(--gold);border:none;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:700;color:#0a0a0a;cursor:pointer;margin-bottom:10px}
+.lock-cancel{font-size:12px;color:var(--dim);cursor:pointer;text-align:center}
+.lock-err{font-size:12px;color:var(--red);text-align:center;min-height:16px;margin-bottom:6px}
+.lock-attempts{font-size:11px;color:var(--dim);text-align:center}
+#admin-panel{position:fixed;inset:0;background:var(--bg);z-index:250;display:flex;flex-direction:column}
+#admin-panel.hidden{display:none}
+.admin-bar{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-top)+14px) 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.admin-bar-left{display:flex;align-items:center;gap:8px}
+.admin-badge{background:var(--gold-dim);border:1px solid rgba(255,214,0,0.4);border-radius:6px;padding:3px 8px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.06em;text-transform:uppercase}
+.admin-title{font-family:var(--font-mono);font-size:14px;font-weight:700}
+.admin-close{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:6px 11px;font-size:12px;color:var(--muted);font-family:var(--font);cursor:pointer}
+.admin-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.admin-tab{flex-shrink:0;padding:9px 14px;font-size:12px;font-weight:600;color:var(--dim);border:none;background:none;font-family:var(--font);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.admin-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.admin-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px}
+.admin-prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:9px}
+.admin-prod-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.admin-prod-num{font-family:var(--font-mono);font-size:10px;color:var(--dim)}
+.admin-del-btn{background:var(--red-dim);border:1px solid rgba(255,61,61,.3);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--red);cursor:pointer;font-family:var(--font);font-weight:600}
+.admin-field{margin-bottom:9px}
+.admin-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px}
+.admin-field input,.admin-field select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px 11px;font-family:var(--font-mono);font-size:13px;color:var(--text);outline:none;-webkit-appearance:none}
+.admin-field input:focus,.admin-field select:focus{border-color:var(--gold)}
+.admin-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.admin-add-btn{width:100%;padding:13px;background:var(--green-dim);border:1px solid rgba(0,230,118,.3);border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:700;color:var(--green);cursor:pointer;margin-bottom:14px}
+.admin-save-btn{width:100%;padding:13px;background:var(--gold);border:none;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:700;color:#0a0a0a;cursor:pointer}
+.admin-danger-zone{background:var(--red-dim);border:1px solid rgba(255,61,61,.3);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.admin-danger-title{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.admin-danger-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
+.admin-danger-btn{padding:9px 14px;background:var(--red);border:none;border-radius:var(--r-sm);font-family:var(--font);font-size:12px;font-weight:700;color:#fff;cursor:pointer}
+.admin-setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.admin-setting-row:last-child{border-bottom:none}
+.admin-setting-label{font-size:13px;font-weight:500}
+.admin-setting-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.admin-setting-val{font-family:var(--font-mono);font-size:12px;color:var(--gold)}
+.admin-pw-change{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.admin-pw-title{font-size:13px;font-weight:600;margin-bottom:10px}
+.change-pw-btn{width:100%;padding:11px;background:var(--gold-dim);border:1px solid rgba(255,214,0,.3);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;font-weight:700;color:var(--gold);cursor:pointer;margin-top:7px}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:9px}
+.info-card-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:9px}
+.audit-entry{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.audit-entry:last-child{border-bottom:none}
+.audit-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.audit-msg{flex:1;color:var(--muted)}
+.audit-time{font-size:10px;color:var(--dim);flex-shrink:0}
+
+/* ── SETUP ── */
+#setup-overlay{position:fixed;inset:0;background:var(--bg);z-index:400;overflow-y:auto;padding:calc(var(--safe-top)+20px) 20px calc(var(--safe-bottom)+20px)}
+#setup-overlay.hidden{display:none}
+.setup-logo{width:44px;height:44px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.setup-logo svg{width:24px;height:24px;fill:#0a0a0a}
+.setup-h1{font-family:var(--font-mono);font-size:18px;font-weight:700;text-align:center;margin-bottom:4px}
+.setup-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px;line-height:1.6}
+.setup-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:9px}
+.setup-step-num{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.setup-step-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.setup-step-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.setup-step a{color:var(--green)}
+.setup-field{margin-bottom:9px}
+.setup-field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+.setup-field input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none}
+.setup-field input:focus{border-color:var(--green)}
+.setup-connect-btn{width:100%;padding:13px;background:var(--green);border:none;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:700;color:#0a0a0a;cursor:pointer;margin-top:4px}
+.setup-skip{width:100%;padding:9px;background:none;border:1px solid var(--border);border-radius:var(--r);font-family:var(--font);font-size:12px;color:var(--dim);cursor:pointer;margin-top:7px}
+.setup-status{font-size:12px;text-align:center;margin-top:7px;min-height:16px}
+.setup-status.ok{color:var(--green)}.setup-status.err{color:var(--red)}
+.sql-block{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:9px 11px;font-family:var(--font-mono);font-size:9px;color:var(--muted);line-height:1.7;margin-bottom:7px;white-space:pre-wrap;user-select:text;-webkit-user-select:text}
+</style>
+</head>
+<body>
+
+<!-- ══════ WORKER LOGIN ══════ -->
+<div id="worker-login">
+  <div class="wl-logo"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="3" height="16"/><rect x="7" y="4" width="1.5" height="16"/><rect x="10.5" y="4" width="3" height="16"/><rect x="15.5" y="4" width="1.5" height="16"/><rect x="19" y="4" width="3" height="16"/></svg></div>
+  <div class="wl-title">FitStock</div>
+  <div class="wl-sub">Who's working this shift?</div>
+  <div class="wl-worker-list" id="worker-list-el"></div>
+  <div style="font-size:11px;color:var(--dim);text-align:center">Your name not here? Ask your manager.</div>
+</div>
+
+<!-- ══════ PIN SCREEN ══════ -->
+<div id="pin-screen" class="hidden">
+  <div class="pin-title" id="pin-title">Enter your PIN</div>
+  <div class="pin-sub" id="pin-sub">4-digit PIN</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-err" id="pin-err"></div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-back" onclick="backToWorkerList()">← Back</div>
+</div>
+
+<!-- ══════ MAIN APP ══════ -->
+<div id="app">
+  <div class="statusbar-pad"></div>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="3" height="16"/><rect x="7" y="4" width="1.5" height="16"/><rect x="10.5" y="4" width="3" height="16"/><rect x="15.5" y="4" width="1.5" height="16"/><rect x="19" y="4" width="3" height="16"/></svg></div>
+      <h1>Fit<span>Stock</span></h1>
+    </div>
+    <div class="topbar-right">
+      <span id="db-indicator"></span>
+      <button class="admin-topbtn" onclick="openAdminLock()">
+        <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Admin
+      </button>
+    </div>
+  </div>
+  <div class="scroll-area" id="main-content"></div>
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="setTab('overview',this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
+    <button class="nav-item" onclick="setTab('scanner',this)"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scanner</button>
+    <button class="nav-item" onclick="setTab('split',this)"><svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9h7M3 15h7M14 9h7M14 15h7"/></svg>Channels</button>
+    <button class="nav-item" onclick="setTab('allocate',this)"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Allocate</button>
+    <button class="nav-item" onclick="setTab('alerts',this)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Alerts</button>
+  </nav>
+</div>
+
+<!-- ══════ ALERT MODAL (wrong channel / product) ══════ -->
+<div id="alert-modal" class="hidden">
+  <div class="alert-modal-card">
+    <div class="alert-modal-header">
+      <div class="alert-modal-icon" id="am-icon">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="alert-modal-title" id="am-title">Wrong channel</div>
+        <div class="alert-modal-body" id="am-body">This product is assigned to a different channel for the current order.</div>
+      </div>
+    </div>
+    <div class="alert-modal-detail" id="am-detail"></div>
+    <div class="alert-modal-actions">
+      <button class="alert-modal-dismiss" onclick="closeAlertModal()">Go back</button>
+      <button class="alert-modal-override" id="am-override-btn" onclick="overrideScan()">Override</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ ORDER MODE MODAL ══════ -->
+<div id="order-modal" class="hidden">
+  <div class="order-modal-card">
+    <div class="order-modal-title">Start order mode</div>
+    <div class="order-modal-sub">Define the order details so the app can catch scanning mistakes.</div>
+    <div class="order-field">
+      <label>Order number (optional)</label>
+      <input type="text" id="om-num" placeholder="e.g. ORD-20240601-001" autocorrect="off"/>
+    </div>
+    <div class="order-field">
+      <label>Channel for this order</label>
+      <select id="om-channel">
+        <option value="shopify">Shopify</option>
+        <option value="tiktok">TikTok Shop</option>
+      </select>
+    </div>
+    <div class="order-field">
+      <label>Expected items (optional — for product checking)</label>
+    </div>
+    <div class="order-add-item">
+      <select id="om-add-sku"></select>
+      <button class="order-add-btn" onclick="omAddItem()">+ Add</button>
+    </div>
+    <div class="order-items-list" id="om-items-list"><div style="font-size:11px;color:var(--dim);text-align:center;padding:8px">No items added — add items to enable product checking</div></div>
+    <button class="order-start-modal-btn" onclick="startOrderMode()">Start order mode</button>
+    <button class="order-cancel-btn" onclick="closeOrderModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════ ADMIN LOCK ══════ -->
+<div id="admin-overlay" class="hidden">
+  <div class="lock-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+  <div class="lock-title">Admin Access</div>
+  <div class="lock-sub">Enter your admin password</div>
+  <div class="lock-err" id="lock-err"></div>
+  <input class="lock-input" id="lock-pw" type="password" placeholder="••••••••" maxlength="32" onkeydown="if(event.key==='Enter')tryAdminLogin()"/>
+  <button class="lock-btn" onclick="tryAdminLogin()">Unlock</button>
+  <div class="lock-cancel" onclick="closeAdminLock()">Cancel</div>
+  <div class="lock-attempts" id="lock-attempts"></div>
+</div>
+
+<!-- ══════ ADMIN PANEL ══════ -->
+<div id="admin-panel" class="hidden">
+  <div class="admin-bar">
+    <div class="admin-bar-left"><div class="admin-badge">Admin</div><div class="admin-title">Control Panel</div></div>
+    <button class="admin-close" onclick="closeAdminPanel()">✕ Exit</button>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="setAdminTab('products',this)">Products</button>
+    <button class="admin-tab" onclick="setAdminTab('inventory',this)">Inventory</button>
+    <button class="admin-tab" onclick="setAdminTab('workers',this)">Workers</button>
+    <button class="admin-tab" onclick="setAdminTab('settings',this)">Settings</button>
+    <button class="admin-tab" onclick="setAdminTab('auditlog',this)">Audit Log</button>
+  </div>
+  <div class="admin-scroll" id="admin-content"></div>
+</div>
+
+<!-- ══════ SUPABASE SETUP ══════ -->
+<div id="setup-overlay" class="hidden">
+  <div class="setup-logo"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="3" height="16"/><rect x="7" y="4" width="1.5" height="16"/><rect x="10.5" y="4" width="3" height="16"/><rect x="15.5" y="4" width="1.5" height="16"/><rect x="19" y="4" width="3" height="16"/></svg></div>
+  <div class="setup-h1">Connect Database</div>
+  <div class="setup-sub">Paste your Supabase credentials to enable real-time sync.</div>
+  <div class="setup-step">
+    <div class="setup-step-num">SQL to run in Supabase → SQL Editor</div>
+    <div class="sql-block">create table if not exists products (
+  id uuid primary key default gen_random_uuid(),
+  sku text unique not null, name text not null,
+  cat text not null, total int default 0,
+  shopify int default 0, tiktok int default 0,
+  reorder int default 5, price numeric default 0,
+  updated_at timestamptz default now()
+);
+create table if not exists scan_log (
+  id uuid primary key default gen_random_uuid(),
+  sku text not null, name text not null,
+  channel text not null, count int not null,
+  worker_name text, worker_id text,
+  flagged boolean default false,
+  flag_reason text,
+  scanned_at timestamptz default now()
+);
+create table if not exists workers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null, pin text not null,
+  color text default '00e676',
+  active boolean default true
+);
+alter table products enable row level security;
+alter table scan_log enable row level security;
+alter table workers enable row level security;
+create policy "allow all" on products for all using (true) with check (true);
+create policy "allow all" on scan_log for all using (true) with check (true);
+create policy "allow all" on workers for all using (true) with check (true);</div>
+    <div class="setup-field"><label>Project URL</label><input id="sb-url" type="url" placeholder="https://xxxx.supabase.co" autocorrect="off" autocapitalize="off"/></div>
+    <div class="setup-field"><label>Anon Public Key</label><input id="sb-key" type="text" placeholder="eyJ..." autocorrect="off" autocapitalize="off"/></div>
+    <div class="setup-status" id="setup-status"></div>
+    <button class="setup-connect-btn" onclick="connectSupabase()">Connect</button>
+  </div>
+  <button class="setup-skip" onclick="document.getElementById('setup-overlay').classList.add('hidden');renderAdmin()">Done / Cancel</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// STORAGE & SUPABASE
+// ══════════════════════════════════════════
+let sbUrl='', sbKey='', isConnected=false;
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+async function sbFetch(path,opts={}){
+  const h={'apikey':sbKey,'Authorization':'Bearer '+sbKey,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})};
+  const r=await fetch(sbUrl+'/rest/v1/'+path,{...opts,headers:h});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+
+async function connectSupabase(){
+  sbUrl=document.getElementById('sb-url').value.trim().replace(/\/$/,'');
+  sbKey=document.getElementById('sb-key').value.trim();
+  const st=document.getElementById('setup-status');
+  if(!sbUrl||!sbKey){st.textContent='Fill in both fields.';st.className='setup-status err';return;}
+  st.textContent='Connecting…';st.className='setup-status';
+  try{
+    await sbFetch('products?limit=1');
+    lsSet('sb_url',sbUrl);lsSet('sb_key',sbKey);isConnected=true;
+    const rows=await sbFetch('products?select=sku');
+    if(rows.length===0)await seedProducts();
+    const wrows=await sbFetch('workers?select=id');
+    if(wrows.length===0)await seedWorkers();
+    else{workers=await sbFetch('workers?order=name');lsSet('fs_workers',workers);}
+    st.textContent='Connected!';st.className='setup-status ok';
+    setTimeout(()=>{document.getElementById('setup-overlay').classList.add('hidden');loadFromDB();startRealtime();updateDbIndicator();renderAdmin();},800);
+  }catch(e){st.textContent='Failed: '+e.message;st.className='setup-status err';}
+}
+
+async function seedProducts(){
+  await sbFetch('products',{method:'POST',body:JSON.stringify(DEFAULT_PRODUCTS.map(p=>({sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0})))});
+}
+async function seedWorkers(){
+  const defaults=[{name:'Maria R.',pin:'1234',color:'00e676'},{name:'James T.',pin:'5678',color:'40c4ff'},{name:'Lena M.',pin:'9012',color:'ff4d8d'},{name:'Carlos D.',pin:'3456',color:'ffab00'}];
+  await sbFetch('workers',{method:'POST',body:JSON.stringify(defaults)});
+  workers=await sbFetch('workers?order=name');lsSet('fs_workers',workers);
+}
+
+async function loadFromDB(){
+  if(!isConnected)return;
+  try{
+    const rows=await sbFetch('products?order=name');
+    inv=rows.map(r=>({...r,unalloc:r.total-r.shopify-r.tiktok}));lsSet('fs_inv',inv);
+    const wrows=await sbFetch('workers?order=name');
+    workers=wrows;lsSet('fs_workers',workers);
+    render();rebuildWorkerList();
+  }catch(e){showToast('Sync error','red');}
+}
+
+function startRealtime(){
+  if(!isConnected)return;
+  try{
+    const ws=new WebSocket(sbUrl.replace('https://','wss://').replace('http://','ws://')+'/realtime/v1/websocket?apikey='+sbKey+'&vsn=1.0.0');
+    ws.onopen=()=>ws.send(JSON.stringify({topic:'realtime:public:products',event:'phx_join',payload:{},ref:1}));
+    ws.onmessage=(e)=>{const m=JSON.parse(e.data);if(m.event==='postgres_changes'||m.payload?.event)loadFromDB();};
+  }catch(e){}
+  setInterval(()=>{if(isConnected)loadFromDB();},30000);
+}
+
+async function pushProductsToDB(){
+  if(!isConnected)return;
+  for(const p of inv){
+    await sbFetch('products?sku=eq.'+encodeURIComponent(p.sku),{method:'PATCH',body:JSON.stringify({name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,updated_at:new Date().toISOString()})}).catch(async()=>{
+      await sbFetch('products',{method:'POST',body:JSON.stringify([{sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0}])}).catch(()=>{});
+    });
+  }
+}
+
+async function pushScanToDB(entry){
+  if(!isConnected)return;
+  await sbFetch('scan_log',{method:'POST',body:JSON.stringify([{sku:entry.sku,name:entry.name,channel:entry.ch,count:entry.count,worker_name:entry.worker,worker_id:entry.workerId,flagged:entry.flagged||false,flag_reason:entry.flagReason||null}])}).catch(()=>{});
+}
+
+function updateDbIndicator(){
+  const el=document.getElementById('db-indicator');if(!el)return;
+  el.innerHTML=isConnected?'<span class="db-badge connected"><span class="rt-dot"></span>Live</span>':'<span class="db-badge local">Offline</span>';
+}
+
+// ══════════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════════
+const DEFAULT_PRODUCTS=[
+  {sku:"SUPP-WP-5LB", name:"Whey Protein 5lb",    cat:"supp",total:52,shopify:28,tiktok:18,reorder:10,price:64.99},
+  {sku:"SUPP-CR-300G",name:"Creatine 300g",        cat:"supp",total:70,shopify:35,tiktok:28,reorder:15,price:29.99},
+  {sku:"SUPP-PR-30SV",name:"Pre-Workout Citrus",   cat:"supp",total:40,shopify:20,tiktok:15,reorder:12,price:44.99},
+  {sku:"SUPP-AM-90CP",name:"BCAA Capsules 90ct",   cat:"supp",total:30,shopify:14,tiktok:10,reorder:8, price:34.99},
+  {sku:"APRL-TK-M",   name:"Compression Tank M",  cat:"appr",total:18,shopify:8, tiktok:6, reorder:6, price:39.99},
+  {sku:"APRL-TK-L",   name:"Compression Tank L",  cat:"appr",total:22,shopify:10,tiktok:8, reorder:6, price:39.99},
+  {sku:"APRL-SH-M",   name:"Training Shorts M",   cat:"appr",total:12,shopify:5, tiktok:4, reorder:5, price:49.99},
+  {sku:"ACCS-BB-RED", name:"Resistance Band Red", cat:"accs",total:65,shopify:30,tiktok:28,reorder:10,price:12.99},
+  {sku:"ACCS-SB-BLK", name:"Shaker Bottle 32oz",  cat:"accs",total:80,shopify:40,tiktok:30,reorder:20,price:14.99},
+  {sku:"ACCS-WW-PAIR",name:"Wrist Wraps Pair",    cat:"accs",total:28,shopify:12,tiktok:10,reorder:8, price:19.99},
+];
+
+const DEFAULT_WORKERS=[
+  {id:'w1',name:'Maria R.',  pin:'1234',color:'00e676'},
+  {id:'w2',name:'James T.',  pin:'5678',color:'40c4ff'},
+  {id:'w3',name:'Lena M.',   pin:'9012',color:'ff4d8d'},
+  {id:'w4',name:'Carlos D.', pin:'3456',color:'ffab00'},
+];
+
+let inv        = lsGet('fs_inv', DEFAULT_PRODUCTS.map(p=>({...p,unalloc:p.total-p.shopify-p.tiktok})));
+let workers    = lsGet('fs_workers', DEFAULT_WORKERS);
+let scanLog    = lsGet('fs_scans', []);
+let alertsList = lsGet('fs_alerts',[
+  {id:1,type:"warn",  ch:"Shopify",msg:"Compression Tank M — at 8 units, nearing reorder threshold"},
+  {id:2,type:"danger",ch:"TikTok", msg:"Training Shorts M — TikTok has only 4 units, likely to stock out"},
+]);
+let auditLog   = lsGet('fs_audit',[]);
+let adminPw    = lsGet('fs_adminpw','fitstock2024');
+let failCount=0,lockUntil=0;
+
+// Session state
+let currentWorker = null; // {id, name, color, pin}
+let activeTab='overview',activeAdminTab='products';
+let scanChannel='shopify',invSearch='',invFilter='All';
+let draftInv=[],draftWorkers=[];
+let pinBuffer='',pinTarget=null;
+
+// Order mode state
+let orderMode=false,orderNum='',orderChannel='shopify',orderItems=[],orderScanned={};
+let pendingScan=null; // held while alert modal is open
+
+function saveAll(){lsSet('fs_inv',inv);lsSet('fs_scans',scanLog.slice(0,100));lsSet('fs_alerts',alertsList);lsSet('fs_audit',auditLog.slice(0,300));lsSet('fs_workers',workers);}
+function addAudit(type,msg){auditLog.unshift({type,msg,time:new Date().toLocaleString()});lsSet('fs_audit',auditLog.slice(0,300));}
+
+// ── HELPERS ──
+function sts(n,r){if(n===0)return'out';if(n<=r)return'low';return'ok';}
+function pct(n,t){return Math.min(100,Math.round((n/Math.max(1,t))*100));}
+function catClass(c){return{supp:'cat-supp',appr:'cat-appr',accs:'cat-accs'}[c]||'';}
+function catLabel(c){return{supp:'Supplement',appr:'Apparel',accs:'Accessory'}[c]||c;}
+function statusPill(s){const m={ok:['pill-ok','In stock'],low:['pill-low','Low'],out:['pill-out','Out']};return`<span class="status-pill ${m[s][0]}">${m[s][1]}</span>`;}
+function countColor(s){return{ok:'green',low:'amber',out:'red'}[s];}
+function nowTime(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+function workerInitials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.className='show'+(type?' toast-'+type:'');
+  clearTimeout(t._timer);t._timer=setTimeout(()=>{t.className=''},2600);
+}
+
+// ══════════════════════════════════════════
+// WORKER LOGIN & PIN
+// ══════════════════════════════════════════
+function rebuildWorkerList(){
+  const el=document.getElementById('worker-list-el');if(!el)return;
+  el.innerHTML=workers.filter(w=>w.active!==false).map(w=>`
+    <button class="wl-worker-btn" onclick="selectWorker('${w.id}')">
+      <div class="wl-avatar" style="background:#${w.color}22;color:#${w.color}">${workerInitials(w.name)}</div>
+      <div style="flex:1">
+        <div class="wl-worker-name">${w.name}</div>
+        <div class="wl-worker-role">Warehouse associate</div>
+      </div>
+      <div class="wl-arrow">›</div>
+    </button>`).join('');
+}
+
+function selectWorker(id){
+  pinTarget=workers.find(w=>w.id===id);
+  if(!pinTarget)return;
+  document.getElementById('pin-title').textContent='Hi, '+pinTarget.name.split(' ')[0]+'!';
+  document.getElementById('pin-sub').textContent='Enter your 4-digit PIN';
+  pinBuffer='';updatePinDots();
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('worker-login').classList.add('hidden');
+  document.getElementById('pin-screen').classList.remove('hidden');
+}
+
+function backToWorkerList(){
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('worker-login').classList.remove('hidden');
+  pinBuffer='';pinTarget=null;
+}
+
+function pinKey(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;updatePinDots();
+  if(pinBuffer.length===4)setTimeout(checkPin,120);
+}
+
+function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const dot=document.getElementById('pd'+i);
+    dot.className='pin-dot'+(i<pinBuffer.length?' filled':'');
+  }
+}
+
+function checkPin(){
+  if(pinBuffer===pinTarget.pin){
+    currentWorker=pinTarget;
+    document.getElementById('pin-screen').classList.add('hidden');
+    document.getElementById('app').style.display='flex';
+    updateDbIndicator();render();
+    showToast('Welcome, '+currentWorker.name.split(' ')[0]+'!','green');
+    addAudit('scan','Worker logged in: '+currentWorker.name);
+  } else {
+    for(let i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
+    document.getElementById('pin-err').textContent='Wrong PIN — try again';
+    setTimeout(()=>{pinBuffer='';updatePinDots();document.getElementById('pin-err').textContent='';},900);
+  }
+}
+
+function switchWorker(){
+  currentWorker=null;orderMode=false;
+  document.getElementById('app').style.display='none';
+  document.getElementById('worker-login').classList.remove('hidden');
+  pinBuffer='';pinTarget=null;
+}
+
+// ══════════════════════════════════════════
+// MAIN NAV & RENDER
+// ══════════════════════════════════════════
+function setTab(tab,el){
+  activeTab=tab;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');render();
+}
+
+function render(){
+  if(!currentWorker)return;
+  document.getElementById('main-content').innerHTML={
+    overview:renderOverview,scanner:renderScanner,split:renderSplit,allocate:renderAllocate,alerts:renderAlerts
+  }[activeTab]();
+}
+
+function workerBarHTML(){
+  if(!currentWorker)return'';
+  return`<div class="worker-bar">
+    <div class="worker-avatar" style="background:#${currentWorker.color}22;color:#${currentWorker.color}">${workerInitials(currentWorker.name)}</div>
+    <div class="worker-info"><div class="worker-name">${currentWorker.name}</div><div class="worker-role">Logged in · ${nowTime()}</div></div>
+    <div class="worker-switch" onclick="switchWorker()">Switch</div>
+  </div>`;
+}
+
+// ── OVERVIEW ──
+function renderOverview(){
+  const total=inv.reduce((a,i)=>a+i.total,0),low=inv.filter(i=>sts(i.shopify,i.reorder)==='low'||sts(i.tiktok,i.reorder)==='low').length;
+  const out=inv.filter(i=>i.total===0).length,buf=inv.reduce((a,i)=>a+Math.max(0,i.unalloc),0);
+  const filtered=inv.filter(i=>{const q=invSearch.toLowerCase();return(!q||i.name.toLowerCase().includes(q)||i.sku.toLowerCase().includes(q))&&(invFilter==='All'||{supp:'Supplements',appr:'Apparel',accs:'Accessories'}[i.cat]===invFilter);});
+  return`${workerBarHTML()}
+  <div class="metric-grid">
+    <div class="metric-card green"><div class="metric-lbl">Total units</div><div class="metric-val green">${total.toLocaleString()}</div><div class="metric-sub">all products</div></div>
+    <div class="metric-card blue"><div class="metric-lbl">Buffer</div><div class="metric-val blue">${buf}</div><div class="metric-sub">unallocated</div></div>
+    <div class="metric-card ${low>0?'amber':'green'}"><div class="metric-lbl">Low stock</div><div class="metric-val ${low>0?'amber':'green'}">${low}</div><div class="metric-sub">products</div></div>
+    <div class="metric-card ${out>0?'red':'green'}"><div class="metric-lbl">Out of stock</div><div class="metric-val ${out>0?'red':'green'}">${out}</div><div class="metric-sub">products</div></div>
+  </div>
+  <div class="search-bar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input placeholder="Search product or SKU…" value="${invSearch}" oninput="invSearch=this.value;render()" type="search"/></div>
+  <div class="filter-chips">${['All','Supplements','Apparel','Accessories'].map(f=>`<button class="filter-chip ${invFilter===f?'active':''}" onclick="invFilter='${f}';render()">${f}</button>`).join('')}</div>
+  <div class="sec-header"><span class="sec-title">Products (${filtered.length})</span><span class="sec-action" onclick="exportCSV()">Export CSV</span></div>
+  <div class="prod-list">${filtered.length===0?'<div class="empty-state">No products match</div>':filtered.map(i=>{const s=sts(i.total,i.reorder),p=pct(i.total,Math.max(1,inv.reduce((a,x)=>a+x.total,0)*0.2));return`<div class="prod-card"><span class="prod-cat-dot ${catClass(i.cat)}"></span><div class="prod-info"><div class="prod-name">${i.name}</div><div class="prod-sku">${i.sku}</div><div class="mini-bar"><div class="mini-bar-fill" style="width:${p}%;background:${s==='ok'?'var(--green)':s==='low'?'var(--amber)':'var(--red)'}"></div></div></div><div class="prod-right"><span class="prod-count ${countColor(s)}">${i.total}</span>${statusPill(s)}</div></div>`;}).join('')}</div>`;
+}
+
+// ── SCANNER ──
+function renderScanner(){
+  const orderBanner = orderMode ? `
+    <div class="order-mode-banner">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <div class="order-mode-info">
+        <div class="order-mode-label">Order mode active — ${orderChannel==='shopify'?'Shopify':'TikTok Shop'}</div>
+        <div class="order-mode-val">${orderNum||'No order number'} · ${orderItems.length} item${orderItems.length!==1?'s':''} expected</div>
+      </div>
+      <div class="order-mode-end" onclick="endOrderMode()">End ✕</div>
+    </div>
+    ${orderItems.length>0?`<div class="order-progress"><div class="order-progress-title">Order progress</div>${orderItems.map(oi=>{const done=!!(orderScanned[oi.sku]);return`<div class="order-progress-row"><div class="order-check ${done?'done':'pending'}">${done?'✓':''}</div><span>${oi.name}</span><span style="margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--muted)">${oi.sku}</span></div>`;}).join('')}</div>`:''}`
+  : `<button class="order-start-btn" onclick="openOrderModal()">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Start order mode (enables mistake alerts)
+    </button>`;
+
+  return`${workerBarHTML()}
+  ${orderBanner}
+  <div class="ch-toggle">
+    <button class="ch-btn shopify ${scanChannel==='shopify'?'active':''}" onclick="setScanChannel('shopify')">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Shopify
+    </button>
+    <button class="ch-btn tiktok ${scanChannel==='tiktok'?'active':''}" onclick="setScanChannel('tiktok')">
+      <svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg>TikTok Shop
+    </button>
+  </div>
+  <div class="scan-area">
+    <div class="scan-icon-wrap ${scanChannel}"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg></div>
+    <div class="scan-who">Scanning as <span>${currentWorker?currentWorker.name:'—'}</span></div>
+    <div class="scan-ch-label ${scanChannel}">${scanChannel==='shopify'?'→ Shopify Store':'→ TikTok Shop'}</div>
+    <div class="scan-input-wrap"><input class="scan-input ${scanChannel}" id="scan-in" placeholder="Scan barcode or type SKU…" type="text" onkeydown="if(event.key==='Enter')doScan()" autocomplete="off" autocorrect="off" spellcheck="false"/><button class="scan-go ${scanChannel}" onclick="doScan()">SCAN</button></div>
+    <button class="demo-btn" onclick="demoScan()">⚡ Demo scan</button>
+  </div>
+  <div class="sec-header"><span class="sec-title">Scan history (${scanLog.length})</span><span class="sec-action" onclick="scanLog=[];saveAll();render()">Clear</span></div>
+  <div class="scan-feed">${scanLog.length===0?'<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>No scans yet</div>':scanLog.slice(0,25).map(s=>`<div class="scan-entry ${s.flagged?'flagged':''}">
+    <span class="scan-entry-ch ${s.ch}">${s.ch}</span>
+    <div class="scan-entry-info">
+      <div class="scan-entry-name">${s.name}</div>
+      <div class="scan-entry-who">👤 ${s.worker||'Unknown'}${s.flagged?`<span class="flag-badge">⚠ ${s.flagReason}</span>`:''}</div>
+    </div>
+    <div class="scan-entry-right">
+      <div class="scan-entry-count">${s.flagged?'⚠':'+1'} →${s.count}</div>
+      <div class="scan-entry-time">${s.time}</div>
+    </div>
+  </div>`).join('')}</div>`;
+}
+
+function setScanChannel(ch){
+  if(orderMode&&ch!==orderChannel){
+    showToast(`Order mode is set to ${orderChannel==='shopify'?'Shopify':'TikTok'} — switch blocked`,'amber');return;
+  }
+  scanChannel=ch;render();setTimeout(()=>document.getElementById('scan-in')?.focus(),80);
+}
+
+// ══════════════════════════════════════════
+// SCAN LOGIC WITH VALIDATION
+// ══════════════════════════════════════════
+async function doScan(overrideFlag){
+  const inp=document.getElementById('scan-in');if(!inp)return;
+  const v=inp.value.trim().toUpperCase();if(!v)return;
+  const item=inv.find(i=>i.sku===v||i.name.toUpperCase().includes(v));
+  if(!item){showToast('SKU not found: '+v,'red');return;}
+  inp.value='';
+
+  // ── VALIDATION 1: Wrong channel (order mode) ──
+  if(orderMode&&!overrideFlag){
+    if(scanChannel!==orderChannel){
+      pendingScan={item,sku:v,type:'wrong-channel'};
+      showAlertModal('wrong-channel',item);return;
+    }
+    // ── VALIDATION 2: Wrong product (order mode with item list) ──
+    if(orderItems.length>0){
+      const expected=orderItems.find(oi=>oi.sku===item.sku);
+      if(!expected){
+        pendingScan={item,sku:v,type:'wrong-product'};
+        showAlertModal('wrong-product',item);return;
+      }
+    }
+  }
+
+  // ── COMMIT SCAN ──
+  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
+  const entry={
+    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
+    time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
+    workerId:currentWorker?currentWorker.id:null,
+    flagged:false,flagReason:null
+  };
+  scanLog.unshift(entry);saveAll();
+
+  // Mark order item as scanned
+  if(orderMode&&orderItems.length>0) orderScanned[item.sku]=true;
+
+  // Push to DB
+  if(isConnected){
+    pushScanToDB(entry);
+    sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
+  }
+
+  showToast(`✓ ${item.name} → ${scanChannel==='shopify'?'Shopify':'TikTok'}`,'green');
+  render();setTimeout(()=>document.getElementById('scan-in')?.focus(),80);
+}
+
+function demoScan(){
+  const item=inv[Math.floor(Math.random()*inv.length)];
+  if(document.getElementById('scan-in'))document.getElementById('scan-in').value=item.sku;
+  doScan();
+}
+
+// ── ALERT MODAL ──
+function showAlertModal(type,item){
+  const modal=document.getElementById('alert-modal');
+  const icon=document.getElementById('am-icon');
+  const title=document.getElementById('am-title');
+  const body=document.getElementById('am-body');
+  const detail=document.getElementById('am-detail');
+  const overrideBtn=document.getElementById('am-override-btn');
+
+  if(type==='wrong-channel'){
+    icon.className='alert-modal-icon red';
+    title.className='alert-modal-title red';title.textContent='Wrong channel!';
+    body.textContent=`This order is assigned to ${orderChannel==='shopify'?'Shopify':'TikTok Shop'} but you scanned it into ${scanChannel==='shopify'?'Shopify':'TikTok Shop'}.`;
+    detail.innerHTML=`
+      <div class="alert-modal-detail-row"><span class="lbl">Product scanned</span><span class="val">${item.name}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">You scanned to</span><span class="val wrong">${scanChannel==='shopify'?'Shopify':'TikTok Shop'}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">Order requires</span><span class="val right">${orderChannel==='shopify'?'Shopify':'TikTok Shop'}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">Scanned by</span><span class="val">${currentWorker?.name||'Unknown'}</span></div>`;
+    overrideBtn.textContent='Force scan anyway';
+  } else {
+    icon.className='alert-modal-icon amber';
+    title.className='alert-modal-title amber';title.textContent='Unexpected product!';
+    body.textContent=`This product is not on the expected list for order "${orderNum||'current order'}". It may be the wrong item.`;
+    detail.innerHTML=`
+      <div class="alert-modal-detail-row"><span class="lbl">Product scanned</span><span class="val wrong">${item.name}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">SKU</span><span class="val">${item.sku}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">Expected items</span><span class="val right">${orderItems.map(i=>i.name).join(', ')}</span></div>
+      <div class="alert-modal-detail-row"><span class="lbl">Scanned by</span><span class="val">${currentWorker?.name||'Unknown'}</span></div>`;
+    overrideBtn.textContent='Scan anyway (log warning)';
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeAlertModal(){
+  document.getElementById('alert-modal').classList.add('hidden');
+  pendingScan=null;
+  setTimeout(()=>document.getElementById('scan-in')?.focus(),80);
+}
+
+async function overrideScan(){
+  document.getElementById('alert-modal').classList.add('hidden');
+  if(!pendingScan)return;
+  const {item,type}=pendingScan;
+  // Commit the scan but flag it
+  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
+  const flagReason=type==='wrong-channel'?'Wrong channel override':'Unexpected product override';
+  const entry={
+    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
+    time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
+    workerId:currentWorker?currentWorker.id:null,
+    flagged:true,flagReason
+  };
+  scanLog.unshift(entry);saveAll();
+  addAudit('scan',`⚠ Flagged scan by ${currentWorker?.name}: ${item.name} — ${flagReason}`);
+
+  // Push auto-alert
+  const newAlert={id:Date.now(),type:'danger',ch:scanChannel==='shopify'?'Shopify':'TikTok',msg:`⚠ ${currentWorker?.name} override: ${item.name} — ${flagReason}`};
+  alertsList.unshift(newAlert);saveAll();
+
+  if(isConnected){
+    pushScanToDB(entry);
+    sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
+  }
+  pendingScan=null;
+  showToast(`⚠ Flagged: ${item.name}`,'amber');render();
+}
+
+// ── ORDER MODE ──
+function openOrderModal(){
+  const sel=document.getElementById('om-add-sku');
+  if(sel)sel.innerHTML=inv.map(i=>`<option value="${i.sku}">${i.name}</option>`).join('');
+  document.getElementById('om-num').value='';
+  document.getElementById('om-items-list').innerHTML='<div style="font-size:11px;color:var(--dim);text-align:center;padding:8px">No items added</div>';
+  orderItems=[];orderScanned={};
+  document.getElementById('order-modal').classList.remove('hidden');
+}
+function closeOrderModal(){document.getElementById('order-modal').classList.add('hidden');}
+function omAddItem(){
+  const sel=document.getElementById('om-add-sku');if(!sel)return;
+  const sku=sel.value;const item=inv.find(i=>i.sku===sku);if(!item)return;
+  if(orderItems.find(i=>i.sku===sku)){showToast('Already in list','');return;}
+  orderItems.push({sku:item.sku,name:item.name});
+  const list=document.getElementById('om-items-list');
+  list.innerHTML=orderItems.map((oi,i)=>`<div class="order-item-row"><span style="flex:1">${oi.name}</span><span class="order-item-sku">${oi.sku}</span><button class="order-item-del" onclick="omRemoveItem(${i})">×</button></div>`).join('');
+}
+function omRemoveItem(i){orderItems.splice(i,1);omAddItem();omAddItem();omRebuildList();}
+function omRebuildList(){const list=document.getElementById('om-items-list');if(!list)return;list.innerHTML=orderItems.length===0?'<div style="font-size:11px;color:var(--dim);text-align:center;padding:8px">No items added</div>':orderItems.map((oi,i)=>`<div class="order-item-row"><span style="flex:1">${oi.name}</span><span class="order-item-sku">${oi.sku}</span><button class="order-item-del" onclick="omRemoveItem(${i})">×</button></div>`).join('');}
+function startOrderMode(){
+  orderNum=document.getElementById('om-num').value.trim();
+  orderChannel=document.getElementById('om-channel').value;
+  orderMode=true;orderScanned={};
+  scanChannel=orderChannel;
+  document.getElementById('order-modal').classList.add('hidden');
+  showToast(`Order mode: ${orderChannel==='shopify'?'Shopify':'TikTok'}`,'blue');
+  render();setTimeout(()=>document.getElementById('scan-in')?.focus(),80);
+}
+function endOrderMode(){orderMode=false;render();}
+
+// ── SPLIT ──
+function renderSplit(){
+  const sU=inv.reduce((a,i)=>a+i.shopify,0),tU=inv.reduce((a,i)=>a+i.tiktok,0);
+  const sL=inv.filter(i=>sts(i.shopify,i.reorder)==='low').length,tL=inv.filter(i=>sts(i.tiktok,i.reorder)==='low').length;
+  const sO=inv.filter(i=>i.shopify===0).length,tO=inv.filter(i=>i.tiktok===0).length;
+  return`${workerBarHTML()}<div class="split-header">
+    <div class="ch-stat-card shopify"><div class="ch-name">Shopify</div><div class="ch-stat-nums"><div class="ch-stat-row"><span>Units</span><span>${sU}</span></div><div class="ch-stat-row"><span>Low</span><span>${sL}</span></div><div class="ch-stat-row"><span>Out</span><span>${sO}</span></div></div></div>
+    <div class="ch-stat-card tiktok"><div class="ch-name">TikTok Shop</div><div class="ch-stat-nums"><div class="ch-stat-row"><span>Units</span><span>${tU}</span></div><div class="ch-stat-row"><span>Low</span><span>${tL}</span></div><div class="ch-stat-row"><span>Out</span><span>${tO}</span></div></div></div>
+  </div>
+  <div class="sec-header"><span class="sec-title">Product breakdown</span></div>
+  ${inv.map(i=>{const mx=Math.max(1,i.shopify+i.tiktok);return`<div class="split-prod-row"><div class="split-prod-name">${i.name}</div><div class="split-bars"><div><div class="split-bar-label"><span style="color:var(--green)">Shopify</span><span class="count" style="color:var(--green)">${i.shopify}</span></div><div class="split-bar-bg"><div class="split-bar-fill sb-shopify" style="width:${pct(i.shopify,mx)}%"></div></div></div><div><div class="split-bar-label"><span style="color:var(--pink)">TikTok</span><span class="count" style="color:var(--pink)">${i.tiktok}</span></div><div class="split-bar-bg"><div class="split-bar-fill sb-tiktok" style="width:${pct(i.tiktok,mx)}%"></div></div></div></div></div>`;}).join('')}`;
+}
+
+// ── ALLOCATE ──
+function renderAllocate(){
+  return`${workerBarHTML()}<div class="sec-header"><span class="sec-title">Channel allocation</span><span class="sec-action" onclick="autoBalance()">Auto 50/50</span></div>
+  ${inv.map((i,idx)=>{const buf=i.unalloc,bufCls=buf>0?'buf-ok':buf===0?'buf-zero':'buf-over',bufTxt=buf>0?`${buf} buffer`:buf===0?'Fully allocated':`Over by ${Math.abs(buf)}`;return`<div class="alloc-card"><div class="alloc-name">${i.name}</div><div class="alloc-meta">${i.sku} · Total: ${i.total}</div><div class="alloc-inputs"><div class="alloc-field shopify"><label>Shopify</label><input type="number" min="0" max="${i.total}" value="${i.shopify}" onchange="updateAlloc(${idx},'shopify',this.value)" inputmode="numeric"/></div><div class="alloc-field tiktok"><label>TikTok</label><input type="number" min="0" max="${i.total}" value="${i.tiktok}" onchange="updateAlloc(${idx},'tiktok',this.value)" inputmode="numeric"/></div></div><div class="alloc-buffer"><span class="alloc-buffer-label">Buffer</span><span class="alloc-buffer-val ${bufCls}">${bufTxt}</span></div></div>`;}).join('')}
+  <button class="export-btn" onclick="exportCSV()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export allocation CSV</button>`;
+}
+
+async function updateAlloc(idx,ch,val){
+  inv[idx][ch]=Math.max(0,parseInt(val)||0);inv[idx].unalloc=inv[idx].total-inv[idx].shopify-inv[idx].tiktok;
+  saveAll();if(isConnected)sbFetch('products?sku=eq.'+encodeURIComponent(inv[idx].sku),{method:'PATCH',body:JSON.stringify({shopify:inv[idx].shopify,tiktok:inv[idx].tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
+  render();
+}
+
+async function autoBalance(){
+  inv.forEach(i=>{i.shopify=Math.floor(i.total/2);i.tiktok=Math.floor(i.total/2);i.unalloc=i.total-i.shopify-i.tiktok;});
+  saveAll();if(isConnected)await pushProductsToDB();
+  showToast('Balanced 50/50','green');render();
+}
+
+// ── ALERTS ──
+function renderAlerts(){
+  const flagged=scanLog.filter(s=>s.flagged);
+  return`${workerBarHTML()}<div class="sec-header"><span class="sec-title">Active alerts (${alertsList.length})</span><span class="sec-action" onclick="alertsList=[];saveAll();render()">Clear all</span></div>
+  ${alertsList.length===0?'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>No active alerts</div>':alertsList.map(a=>`<div class="alert-card ${a.type}"><svg class="alert-icon" viewBox="0 0 24 24" style="stroke:${a.type==='danger'?'var(--red)':a.type==='warn'?'var(--amber)':'var(--blue)'};fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">${a.type==='danger'||a.type==='warn'?'<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>':'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}</svg><div class="alert-body"><div class="alert-source">${a.ch}</div><div class="alert-msg">${a.msg}</div></div><button class="alert-dismiss" onclick="dismissAlert(${a.id})">×</button></div>`).join('')}
+  ${flagged.length>0?`<div class="sec-header" style="margin-top:12px"><span class="sec-title">Flagged scans (${flagged.length})</span></div>
+  ${flagged.slice(0,10).map(s=>`<div class="alert-card danger"><div class="alert-body"><div class="alert-source">⚠ ${s.worker} — ${s.time}</div><div class="alert-msg">${s.name} scanned to ${s.ch} — ${s.flagReason}</div></div></div>`).join('')}`:''}
+  <button class="export-btn" onclick="exportCSV()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export full report</button>`;
+}
+
+function dismissAlert(id){alertsList=alertsList.filter(a=>a.id!==id);saveAll();render();}
+
+function exportCSV(){
+  const rows=[['SKU','Product','Category','Price','Total','Shopify','TikTok','Buffer','Reorder','Status']];
+  inv.forEach(i=>rows.push([i.sku,`"${i.name}"`,catLabel(i.cat),i.price||'',i.total,i.shopify,i.tiktok,Math.max(0,i.unalloc),i.reorder,sts(i.total,i.reorder)]));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);
+  a.download='fitstock_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  showToast('CSV exported','green');
+}
+
+// ══════════════════════════════════════════
+// ADMIN SYSTEM
+// ══════════════════════════════════════════
+function openAdminLock(){
+  if(Date.now()<lockUntil){showToast(`Locked ${Math.ceil((lockUntil-Date.now())/1000)}s`,'red');return;}
+  document.getElementById('admin-overlay').classList.remove('hidden');
+  document.getElementById('lock-pw').value='';document.getElementById('lock-err').textContent='';document.getElementById('lock-attempts').textContent='';
+  setTimeout(()=>document.getElementById('lock-pw')?.focus(),180);
+}
+function closeAdminLock(){document.getElementById('admin-overlay').classList.add('hidden');}
+function tryAdminLogin(){
+  if(Date.now()<lockUntil){showToast('Too many attempts','red');return;}
+  const pw=document.getElementById('lock-pw').value;
+  if(pw===adminPw){failCount=0;document.getElementById('admin-overlay').classList.add('hidden');openAdminPanel();}
+  else{
+    failCount++;const inp=document.getElementById('lock-pw');inp.classList.add('shake');setTimeout(()=>inp.classList.remove('shake'),400);inp.value='';
+    if(failCount>=5){lockUntil=Date.now()+60000;document.getElementById('lock-err').textContent='Locked 60s.';addAudit('pw','Admin locked — 5 failed attempts');}
+    else{document.getElementById('lock-err').textContent='Wrong password';document.getElementById('lock-attempts').textContent=`${5-failCount} attempt${5-failCount!==1?'s':''} left`;}
+  }
+}
+function openAdminPanel(){draftInv=JSON.parse(JSON.stringify(inv));draftWorkers=JSON.parse(JSON.stringify(workers));document.getElementById('admin-panel').classList.remove('hidden');setAdminTab('products',document.querySelector('.admin-tab'));addAudit('pw','Admin panel opened');}
+function closeAdminPanel(){document.getElementById('admin-panel').classList.add('hidden');addAudit('pw','Admin panel closed');}
+function setAdminTab(tab,el){activeAdminTab=tab;document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');renderAdmin();}
+function renderAdmin(){document.getElementById('admin-content').innerHTML={products:renderAdminProducts,inventory:renderAdminInventory,workers:renderAdminWorkers,settings:renderAdminSettings,auditlog:renderAdminAuditLog}[activeAdminTab]();}
+
+// ── ADMIN PRODUCTS ──
+function renderAdminProducts(){
+  return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Edit catalog. Tap <strong style="color:var(--gold)">Save all products</strong> to apply${isConnected?' and sync to all devices.':' (offline).'}
+  </div>${draftInv.map((item,idx)=>`<div class="admin-prod-card"><div class="admin-prod-head"><span class="admin-prod-num">#${idx+1}</span><button class="admin-del-btn" onclick="draftDeleteProduct(${idx})">Delete</button></div>
+  <div class="admin-field"><label>Product name</label><input type="text" value="${item.name}" oninput="draftInv[${idx}].name=this.value"/></div>
+  <div class="admin-row2"><div class="admin-field"><label>SKU</label><input type="text" value="${item.sku}" oninput="draftInv[${idx}].sku=this.value.toUpperCase()" autocorrect="off"/></div><div class="admin-field"><label>Category</label><select onchange="draftInv[${idx}].cat=this.value"><option value="supp" ${item.cat==='supp'?'selected':''}>Supplement</option><option value="appr" ${item.cat==='appr'?'selected':''}>Apparel</option><option value="accs" ${item.cat==='accs'?'selected':''}>Accessory</option></select></div></div>
+  <div class="admin-row2"><div class="admin-field"><label>Price ($)</label><input type="number" min="0" step="0.01" value="${item.price||''}" oninput="draftInv[${idx}].price=parseFloat(this.value)||0" inputmode="decimal"/></div><div class="admin-field"><label>Reorder at</label><input type="number" min="0" value="${item.reorder}" oninput="draftInv[${idx}].reorder=parseInt(this.value)||0" inputmode="numeric"/></div></div></div>`).join('')}
+  <button class="admin-add-btn" onclick="draftAddProduct()">+ Add new product</button>
+  <button class="admin-save-btn" onclick="saveAdminProducts()">Save all products</button><div style="height:20px"></div>`;
+}
+
+function draftAddProduct(){draftInv.push({sku:'NEW-'+Date.now().toString(36).toUpperCase(),name:'New Product',cat:'supp',total:0,shopify:0,tiktok:0,reorder:5,price:0,unalloc:0});renderAdmin();setTimeout(()=>{const el=document.getElementById('admin-content');el.scrollTop=el.scrollHeight;},80);}
+function draftDeleteProduct(idx){if(!confirm(`Delete "${draftInv[idx].name}"?`))return;draftInv.splice(idx,1);renderAdmin();}
+async function saveAdminProducts(){
+  for(let i=0;i<draftInv.length;i++){if(!draftInv[i].name.trim()||!draftInv[i].sku.trim()){showToast(`Product #${i+1} incomplete`,'red');return;}}
+  const skus=draftInv.map(i=>i.sku),dupes=skus.filter((s,i)=>skus.indexOf(s)!==i);
+  if(dupes.length){showToast('Duplicate SKU: '+dupes[0],'red');return;}
+  const oldMap={};inv.forEach(i=>oldMap[i.sku]=i);
+  inv=draftInv.map(d=>{const old=oldMap[d.sku];return{...d,total:old?old.total:d.total,shopify:old?old.shopify:d.shopify,tiktok:old?old.tiktok:d.tiktok,unalloc:old?(old.total-old.shopify-old.tiktok):(d.total-d.shopify-d.tiktok)};});
+  saveAll();if(isConnected){await pushProductsToDB();}
+  addAudit('edit',`Product catalog saved — ${inv.length} products`);
+  showToast(isConnected?'Saved & synced!':'Products saved','gold');render();
+}
+
+// ── ADMIN INVENTORY ──
+function renderAdminInventory(){
+  return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Edit stock counts. <strong style="color:var(--gold)">Save inventory</strong> to apply${isConnected?' and push to all devices.':'.'}
+  </div>${draftInv.map((item,idx)=>{const buf=item.total-item.shopify-item.tiktok;return`<div class="admin-prod-card"><div class="admin-prod-head"><span class="admin-prod-num" style="font-size:11px">${item.name}</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--dim)">${item.sku}</span></div>
+  <div class="admin-row3"><div class="admin-field"><label>Shopify</label><input type="number" min="0" value="${item.shopify}" inputmode="numeric" oninput="draftInv[${idx}].shopify=parseInt(this.value)||0;draftInv[${idx}].total=draftInv[${idx}].shopify+draftInv[${idx}].tiktok+Math.max(0,draftInv[${idx}].unalloc||0)"/></div><div class="admin-field"><label>TikTok</label><input type="number" min="0" value="${item.tiktok}" inputmode="numeric" oninput="draftInv[${idx}].tiktok=parseInt(this.value)||0;draftInv[${idx}].total=draftInv[${idx}].shopify+draftInv[${idx}].tiktok+Math.max(0,draftInv[${idx}].unalloc||0)"/></div><div class="admin-field"><label>Buffer</label><input type="number" min="0" value="${Math.max(0,buf)}" inputmode="numeric" oninput="draftInv[${idx}].unalloc=parseInt(this.value)||0;draftInv[${idx}].total=draftInv[${idx}].shopify+draftInv[${idx}].tiktok+(parseInt(this.value)||0)"/></div></div>
+  <div style="font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:6px;margin-top:4px">Total: <b style="color:var(--text)">${item.total}</b></div></div>`;}).join('')}
+  <button class="admin-save-btn" onclick="saveAdminInventory()">Save inventory</button><div style="height:20px"></div>`;
+}
+
+async function saveAdminInventory(){
+  inv=draftInv.map(d=>({...d,unalloc:d.total-d.shopify-d.tiktok}));
+  saveAll();if(isConnected)await pushProductsToDB();
+  addAudit('edit','Inventory counts updated by admin');
+  showToast(isConnected?'Inventory synced!':'Inventory saved','gold');render();
+}
+
+// ── ADMIN WORKERS ──
+function renderAdminWorkers(){
+  const COLORS=['00e676','40c4ff','ff4d8d','ffab00','ff3d3d','a78bfa','34d399','fb923c'];
+  return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+    Manage worker accounts and PINs. Workers use their PIN to log in — no username needed.
+    Changes take effect immediately after saving.
+  </div>
+  ${draftWorkers.map((w,idx)=>`<div class="worker-roster-card">
+    <div class="roster-avatar" style="background:#${w.color}22;color:#${w.color};width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${workerInitials(w.name)}</div>
+    <div class="roster-info" style="flex:1">
+      <input type="text" value="${w.name}" oninput="draftWorkers[${idx}].name=this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 9px;font-size:13px;font-weight:500;color:var(--text);width:100%;margin-bottom:5px;font-family:var(--font)"/>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">PIN:</span>
+        <input type="text" value="${w.pin}" maxlength="4" oninput="draftWorkers[${idx}].pin=this.value.replace(/\D/g,'')" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 8px;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold);width:64px;letter-spacing:.15em" inputmode="numeric"/>
+        <div style="display:flex;gap:4px">${COLORS.map(c=>`<div onclick="draftWorkers[${idx}].color='${c}';renderAdmin()" style="width:18px;height:18px;border-radius:50%;background:#${c};cursor:pointer;border:2px solid ${w.color===c?'#fff':'transparent'}"></div>`).join('')}</div>
+      </div>
+    </div>
+    <button class="roster-del" onclick="draftDeleteWorker(${idx})">×</button>
+  </div>`).join('')}
+  <button class="admin-add-btn" onclick="draftAddWorker()">+ Add worker</button>
+  <button class="admin-save-btn" onclick="saveAdminWorkers()">Save workers</button>
+  <div style="height:12px"></div>
+  <div style="background:var(--surface2);border-radius:var(--r-sm);padding:12px;font-size:11px;color:var(--muted);line-height:1.7">
+    <b style="color:var(--amber)">PIN rules:</b> 4 digits, numbers only. Each worker must have a unique PIN. Share PINs privately — not on paper in the warehouse.
+  </div>
+  <div style="height:20px"></div>`;
+}
+
+function draftAddWorker(){draftWorkers.push({id:'w'+Date.now(),name:'New Worker',pin:'0000',color:'00e676',active:true});renderAdmin();}
+function draftDeleteWorker(idx){if(!confirm(`Remove "${draftWorkers[idx].name}"?`))return;draftWorkers.splice(idx,1);renderAdmin();}
+async function saveAdminWorkers(){
+  for(let i=0;i<draftWorkers.length;i++){
+    if(!draftWorkers[i].name.trim()){showToast(`Worker #${i+1} needs a name`,'red');return;}
+    if(!/^\d{4}$/.test(draftWorkers[i].pin)){showToast(`${draftWorkers[i].name}: PIN must be exactly 4 digits`,'red');return;}
+  }
+  const pins=draftWorkers.map(w=>w.pin),pinDupes=pins.filter((p,i)=>pins.indexOf(p)!==i);
+  if(pinDupes.length){showToast('Duplicate PIN: '+pinDupes[0],'red');return;}
+  workers=draftWorkers;saveAll();rebuildWorkerList();
+  if(isConnected){
+    for(const w of workers){
+      if(w.id.startsWith('w')&&w.id.length<10){
+        await sbFetch('workers',{method:'POST',body:JSON.stringify([{name:w.name,pin:w.pin,color:w.color}])}).catch(()=>{});
+      } else {
+        await sbFetch('workers?id=eq.'+w.id,{method:'PATCH',body:JSON.stringify({name:w.name,pin:w.pin,color:w.color})}).catch(()=>{});
+      }
+    }
+  }
+  addAudit('edit',`Worker roster saved — ${workers.length} workers`);
+  showToast('Workers saved!','gold');
+}
+
+// ── ADMIN SETTINGS ──
+function renderAdminSettings(){
+  return`<div class="admin-pw-change"><div class="admin-pw-title">Change admin password</div>
+  <div class="admin-field"><label>Current password</label><input type="password" id="pw-old"/></div>
+  <div class="admin-field"><label>New password</label><input type="password" id="pw-new" placeholder="Min 6 characters"/></div>
+  <div class="admin-field"><label>Confirm new</label><input type="password" id="pw-confirm"/></div>
+  <button class="change-pw-btn" onclick="changePassword()">Update password</button></div>
+  <div class="info-card"><div class="info-card-title">App status</div>
+  <div class="admin-setting-row"><div><div class="admin-setting-label">Database</div><div class="admin-setting-sub">${isConnected?sbUrl:'Offline mode'}</div></div><div class="admin-setting-val">${isConnected?'🟢 Live':'🟡 Local'}</div></div>
+  <div class="admin-setting-row"><div><div class="admin-setting-label">Products</div></div><div class="admin-setting-val">${inv.length}</div></div>
+  <div class="admin-setting-row"><div><div class="admin-setting-label">Workers</div></div><div class="admin-setting-val">${workers.length}</div></div>
+  <div class="admin-setting-row"><div><div class="admin-setting-label">Total scans logged</div></div><div class="admin-setting-val">${scanLog.length}</div></div>
+  <div class="admin-setting-row"><div><div class="admin-setting-label">Flagged scans</div></div><div class="admin-setting-val" style="color:${scanLog.filter(s=>s.flagged).length>0?'var(--red)':'var(--dim)'}">${scanLog.filter(s=>s.flagged).length}</div></div>
+  ${isConnected?'':`<button class="change-pw-btn" onclick="document.getElementById('setup-overlay').classList.remove('hidden')" style="margin-top:10px">Connect to Supabase</button>`}</div>
+  <div class="admin-danger-zone"><div class="admin-danger-title">Danger zone</div><div class="admin-danger-desc">Reset all data to factory defaults. Cannot be undone.</div><button class="admin-danger-btn" onclick="factoryReset()">Reset all data</button></div>
+  <div style="height:20px"></div>`;
+}
+
+function changePassword(){
+  const old=document.getElementById('pw-old').value,nw=document.getElementById('pw-new').value,conf=document.getElementById('pw-confirm').value;
+  if(old!==adminPw){showToast('Wrong current password','red');return;}
+  if(nw.length<6){showToast('Min 6 characters','red');return;}
+  if(nw!==conf){showToast('Passwords do not match','red');return;}
+  adminPw=nw;lsSet('fs_adminpw',adminPw);addAudit('pw','Admin password changed');showToast('Password updated!','gold');
+  ['pw-old','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');
+}
+
+function factoryReset(){
+  if(!confirm('RESET ALL DATA?\nRestores factory defaults. Cannot be undone.'))return;
+  inv=DEFAULT_PRODUCTS.map(p=>({...p,unalloc:p.total-p.shopify-p.tiktok}));
+  workers=DEFAULT_WORKERS;scanLog=[];alertsList=[];auditLog=[];
+  saveAll();addAudit('reset','Factory reset by admin');showToast('Reset complete','gold');render();renderAdmin();rebuildWorkerList();
+}
+
+// ── ADMIN AUDIT LOG ──
+function renderAdminAuditLog(){
+  const iMap={scan:'var(--green)',edit:'var(--gold)',del:'var(--red)',pw:'var(--pink)',reset:'var(--amber)'};
+  const workerScans=workers.map(w=>{const n=scanLog.filter(s=>s.worker===w.name).length;const f=scanLog.filter(s=>s.worker===w.name&&s.flagged).length;return{...w,scans:n,flagged:f};});
+  return`<div class="sec-header"><span class="sec-title">Scan attribution</span></div>
+  ${workerScans.map(w=>`<div class="worker-roster-card">
+    <div class="roster-avatar" style="background:#${w.color}22;color:#${w.color};width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${workerInitials(w.name)}</div>
+    <div class="roster-info"><div class="roster-name">${w.name}</div><div class="roster-meta">${w.scans} scans this session${w.flagged>0?` · <span style="color:var(--red)">⚠ ${w.flagged} flagged</span>`:''}</div></div>
+    <div class="roster-scans">${w.scans}</div>
+  </div>`).join('')}
+  <div class="sec-header" style="margin-top:14px"><span class="sec-title">Admin actions (${auditLog.length})</span><span class="sec-action" onclick="auditLog=[];lsSet('fs_audit',[]);renderAdmin()">Clear</span></div>
+  ${auditLog.length===0?'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No actions yet</div>':
+  `<div class="info-card"><div style="padding:0">${auditLog.map(e=>`<div class="audit-entry"><div class="audit-dot" style="background:${iMap[e.type]||'var(--dim)'}"></div><div class="audit-msg">${e.msg}</div><div class="audit-time">${e.time}</div></div>`).join('')}</div></div>`}
+  <div style="height:20px"></div>`;
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+sbUrl=lsGet('sb_url','');sbKey=lsGet('sb_key','');
+if(sbUrl&&sbKey){isConnected=true;loadFromDB();startRealtime();}
+
+// Hide main app until worker logs in
+document.getElementById('app').style.display='none';
+rebuildWorkerList();
+updateDbIndicator();
+</script>
+</body>
+</html>
