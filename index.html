@@ -765,10 +765,25 @@ function updatePinDots(){
 function checkPin(){
   if(pinBuffer===pinTarget.pin){
     currentWorker=pinTarget;
+    // Hide all login screens
     document.getElementById('pin-screen').classList.add('hidden');
-    document.getElementById('app').style.display='flex';
-    updateDbIndicator();render();
-    showToast('Welcome, '+currentWorker.name.split(' ')[0]+'!','green');
+    document.getElementById('worker-login').classList.add('hidden');
+    // Show main app — force display with both style approaches for max compatibility
+    const appEl = document.getElementById('app');
+    appEl.style.cssText = 'display:flex !important; flex-direction:column; height:100dvh; height:100vh;';
+    appEl.removeAttribute('hidden');
+    // Default to Scanner tab since that's what workers use most
+    activeTab = 'scanner';
+    document.querySelectorAll('.nav-item').forEach((b,i) => {
+      b.classList.remove('active');
+      if(i === 1) b.classList.add('active'); // Scanner is index 1
+    });
+    updateDbIndicator();
+    // Small delay to ensure DOM is ready before rendering
+    setTimeout(() => {
+      render();
+      showToast('Welcome, '+currentWorker.name.split(' ')[0]+'! 👋','green');
+    }, 80);
     addAudit('scan','Worker logged in: '+currentWorker.name);
   } else {
     for(let i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
@@ -779,9 +794,12 @@ function checkPin(){
 
 function switchWorker(){
   currentWorker=null;orderMode=false;
-  document.getElementById('app').style.display='none';
+  const appEl=document.getElementById('app');
+  appEl.style.cssText='display:none !important;';
   document.getElementById('worker-login').classList.remove('hidden');
+  document.getElementById('pin-screen').classList.add('hidden');
   pinBuffer='';pinTarget=null;
+  activeTab='scanner';
 }
 
 // ══════════════════════════════════════════
@@ -1263,7 +1281,8 @@ sbUrl=lsGet('sb_url','');sbKey=lsGet('sb_key','');
 if(sbUrl&&sbKey){isConnected=true;loadFromDB();startRealtime();}
 
 // Hide main app until worker logs in
-document.getElementById('app').style.display='none';
+const _appEl = document.getElementById('app');
+_appEl.style.cssText = 'display:none !important;';
 rebuildWorkerList();
 updateDbIndicator();
 </script>
