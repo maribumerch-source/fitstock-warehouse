@@ -8,6 +8,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FitStock"/>
 <meta name="theme-color" content="#0a0a0a"/>
+<!-- Force iOS Safari not to cache this page -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<script>
+// Unregister any old service workers immediately on load
+// This is the only reliable way to force iOS Safari to pick up updates
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => {
+      // Unregister if it's an old version (no active worker claiming this page)
+      if(reg.active && !navigator.serviceWorker.controller){
+        reg.unregister();
+      }
+    });
+  });
+}
+</script>
 <title>FitStock Warehouse</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" href="icons/icon-192.png"/>
@@ -33,7 +51,8 @@ html,body{height:100%;overflow:hidden}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
 
 /* ── LAYOUT ── */
-#app{display:none;flex-direction:column;height:100dvh;height:100vh}
+html,body{height:100%;width:100%;overflow:hidden;position:fixed}
+#app{display:none;flex-direction:column;width:100%;height:100%;position:fixed;top:0;left:0;right:0;bottom:0}
 #app.visible{display:flex !important}
 .statusbar-pad{height:calc(var(--safe-top)+8px);background:var(--bg);flex-shrink:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;flex-shrink:0}
@@ -47,8 +66,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .admin-topbtn{background:var(--gold-dim);border:1px solid rgba(255,214,0,0.3);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);font-family:var(--font);display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:600}
-.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 16px 8px}
-.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding:8px 2px calc(var(--safe-bottom)+8px);flex-shrink:0}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 16px 8px;min-height:0}
+.bottom-nav{display:flex;flex-direction:row;flex-shrink:0;flex-grow:0;background:var(--surface);border-top:1px solid var(--border);padding:8px 2px calc(var(--safe-bottom)+8px);width:100%;min-height:56px}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--dim);font-size:9px;letter-spacing:.2px;transition:color .15s;-webkit-tap-highlight-color:transparent}
 .nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav-item.active{color:var(--green)}
@@ -900,8 +919,14 @@ function rebuildNav(){
       <svg viewBox="0 0 24 24">${t.svg}</svg>
       ${t.label}
     </button>`).join('');
+  // Force the nav to be visible — defensive against mobile CSS collapse
+  nav.style.display = 'flex';
+  nav.style.minHeight = '56px';
   // If current activeTab not in allowed tabs, default to scanner
-  if(!canSeeTab(activeTab)){ activeTab='scanner'; rebuildNav(); }
+  if(!canSeeTab(activeTab)){
+    activeTab='scanner';
+    nav.querySelector(`[onclick*="scanner"]`)?.classList.add('active');
+  }
 }
 
 function renderNav(){ rebuildNav(); }
@@ -984,7 +1009,7 @@ function renderScanner(){
       Tap to scan barcode
     </button>
     <div class="manual-row">
-      <input id="scan-in" placeholder="Or type SKU manually…" type="text" onkeydown="if(event.key==='Enter')doScan()" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="none"/>
+      <input id="scan-in" placeholder="Or type SKU manually…" type="text" onkeydown="if(event.key==='Enter')doScan()" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters"/>
       <button onclick="doScan()">Enter</button>
     </div>
   </div>
