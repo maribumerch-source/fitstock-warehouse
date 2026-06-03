@@ -438,6 +438,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
     <div class="pin-dot" id="pd3"></div>
   </div>
   <div class="pin-err" id="pin-err"></div>
+  <!-- Hidden input captures physical keyboard and mobile numpad -->
+  <input id="pin-keyboard-input" type="tel" inputmode="numeric" maxlength="4"
+    style="position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;left:-999px"
+    autocomplete="off" autocorrect="off"/>
   <div class="pin-pad">
     <button class="pin-key" onclick="pinKey('1')">1</button>
     <button class="pin-key" onclick="pinKey('2')">2</button>
@@ -807,6 +811,11 @@ function selectWorker(id){
   document.getElementById('pin-err').textContent='';
   document.getElementById('worker-login').classList.add('hidden');
   document.getElementById('pin-screen').classList.remove('hidden');
+  // Focus hidden input so physical keyboard works immediately
+  setTimeout(()=>{
+    const ki = document.getElementById('pin-keyboard-input');
+    if(ki){ ki.value=''; ki.focus(); }
+  }, 100);
 }
 
 function backToWorkerList(){
@@ -837,17 +846,19 @@ function checkPin(){
     document.getElementById('worker-login').classList.add('hidden');
     // Show app using CSS class — reliable on all phones and tablets
     const appEl = document.getElementById('app');
-    appEl.style.cssText = ''; // clear any leftover inline styles
+    appEl.style.cssText = '';
     appEl.classList.add('visible');
-    // Build role-based nav
-    rebuildNav();
     activeTab = 'scanner';
     updateDbIndicator();
-    setTimeout(()=>{
-      renderNav();
-      render();
-      showToast('Welcome, '+currentWorker.name.split(' ')[0]+'! 👋','green');
-    }, 50);
+    // Use requestAnimationFrame to ensure the DOM has painted before
+    // building the nav — fixes Android tab visibility bug
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        rebuildNav();
+        render();
+        showToast('Welcome, '+currentWorker.name.split(' ')[0]+'! 👋','green');
+      });
+    });
     addAudit('scan','Worker logged in: '+currentWorker.name+' ('+roleLabel(currentWorker.role||'associate')+')');
   } else {
     for(let i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
@@ -1568,8 +1579,24 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 sbUrl=lsGet('sb_url','');sbKey=lsGet('sb_key','');
 if(sbUrl&&sbKey){isConnected=true;loadFromDB();startRealtime();}
 
+// ── KEYBOARD LISTENER FOR PIN ──
+// Captures physical keyboard and numpad input on the PIN screen
+document.addEventListener('keydown', e => {
+  const pinVisible = !document.getElementById('pin-screen').classList.contains('hidden');
+  if(!pinVisible) return;
+  if(e.key >= '0' && e.key <= '9'){ pinKey(e.key); e.preventDefault(); }
+  else if(e.key === 'Backspace'){ pinDel(); e.preventDefault(); }
+});
+
+// Also capture input from the hidden tel input (mobile numpad)
+document.addEventListener('input', e => {
+  if(e.target.id !== 'pin-keyboard-input') return;
+  const val = e.target.value.replace(/\D/g,'');
+  e.target.value = '';
+  for(const ch of val){ pinKey(ch); }
+});
+
 // Hide main app until worker logs in — handled by CSS (#app default is display:none)
-// #app only becomes visible when .visible class is added in checkPin()
 rebuildWorkerList();
 updateDbIndicator();
 </script>
