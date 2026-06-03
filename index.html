@@ -149,6 +149,42 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .alert-modal-dismiss{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;color:var(--text);cursor:pointer}
 .alert-modal-override{flex:1;padding:12px;background:var(--red-dim);border:1px solid rgba(255,61,61,.3);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;font-weight:600;color:var(--red);cursor:pointer}
 
+/* ── CAMERA SCANNER OVERLAY ── */
+#camera-overlay{position:fixed;inset:0;background:#000;z-index:800;display:flex;flex-direction:column}
+#camera-overlay.hidden{display:none}
+#camera-video{width:100%;height:100%;object-fit:cover}
+.camera-ui{position:absolute;inset:0;display:flex;flex-direction:column;pointer-events:none}
+.camera-top-bar{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--safe-top)+16px) 20px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+.camera-top-bar .cam-title{color:#fff;font-size:15px;font-weight:600;font-family:var(--font)}
+.camera-top-bar .cam-ch{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:99px}
+.camera-top-bar .cam-ch.shopify{background:var(--green-dim);color:var(--green);border:1px solid var(--green)}
+.camera-top-bar .cam-ch.tiktok{background:var(--pink-dim);color:var(--pink);border:1px solid var(--pink)}
+.camera-close-btn{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:40px;height:40px;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;font-family:var(--font)}
+.camera-frame-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.camera-frame{width:260px;height:260px;position:relative}
+.camera-frame::before,.camera-frame::after{content:'';position:absolute;width:40px;height:40px;border-color:#fff;border-style:solid;border-radius:4px}
+.camera-frame::before{top:0;left:0;border-width:3px 0 0 3px}
+.camera-frame::after{bottom:0;right:0;border-width:0 3px 3px 0}
+.camera-frame-inner::before,.camera-frame-inner::after{content:'';position:absolute;width:40px;height:40px;border-color:#fff;border-style:solid;border-radius:4px}
+.camera-frame-inner::before{top:0;right:0;border-width:3px 3px 0 0}
+.camera-frame-inner::after{bottom:0;left:0;border-width:0 0 3px 3px}
+.camera-scan-line{position:absolute;left:4px;right:4px;height:2px;background:var(--green);box-shadow:0 0 8px var(--green);animation:scan-line 2s ease-in-out infinite;top:50%}
+@keyframes scan-line{0%,100%{top:10%}50%{top:90%}}
+.camera-bottom-bar{padding:20px 20px calc(var(--safe-bottom)+24px);background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);text-align:center;pointer-events:all}
+.camera-hint{color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:16px}
+.camera-manual-btn{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:99px;padding:10px 24px;color:#fff;font-family:var(--font);font-size:13px;cursor:pointer}
+.camera-result-flash{position:absolute;inset:0;background:rgba(0,230,118,0.25);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.camera-result-flash.show{opacity:1}
+.camera-result-pill{background:var(--green);color:#0a0a0a;padding:14px 24px;border-radius:99px;font-size:16px;font-weight:700;font-family:var(--font);text-align:center;max-width:80%}
+/* Big scan button */
+.big-scan-btn{width:100%;padding:18px;background:var(--green);border:none;border-radius:var(--r);font-family:var(--font);font-size:16px;font-weight:700;color:#0a0a0a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 24px rgba(0,230,118,0.25)}
+.big-scan-btn.tiktok{background:var(--pink);box-shadow:0 4px 24px rgba(255,77,141,0.25)}
+.big-scan-btn svg{width:22px;height:22px;stroke:#0a0a0a;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.manual-row{display:flex;gap:8px;margin-bottom:10px}
+.manual-row input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:12px 14px;font-family:var(--font-mono);font-size:13px;color:var(--text);outline:none}
+.manual-row input:focus{border-color:var(--green)}
+.manual-row button{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:0 16px;font-family:var(--font);font-size:13px;color:var(--muted);cursor:pointer}
+
 /* ── SCAN FEED ── */
 .scan-feed{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
 .scan-entry{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 12px;animation:pop .2s ease}
@@ -565,6 +601,31 @@ create policy "allow all" on workers for all using (true) with check (true);</di
   <button class="setup-skip" onclick="document.getElementById('setup-overlay').classList.add('hidden');renderAdmin()">Done / Cancel</button>
 </div>
 
+<!-- ══════ CAMERA SCANNER OVERLAY ══════ -->
+<div id="camera-overlay" class="hidden">
+  <video id="camera-video" playsinline autoplay muted></video>
+  <div class="camera-ui">
+    <div class="camera-top-bar">
+      <div class="cam-title">Scan barcode</div>
+      <span class="cam-ch shopify" id="cam-ch-badge">Shopify</span>
+      <div class="camera-close-btn" onclick="closeCamera()">✕</div>
+    </div>
+    <div class="camera-frame-wrap">
+      <div class="camera-frame">
+        <div class="camera-frame-inner"></div>
+        <div class="camera-scan-line"></div>
+      </div>
+    </div>
+    <div class="camera-bottom-bar">
+      <div class="camera-hint">Point the barcode at the green line</div>
+      <button class="camera-manual-btn" onclick="closeCamera()">Enter SKU manually instead</button>
+    </div>
+    <div class="camera-result-flash" id="cam-flash">
+      <div class="camera-result-pill" id="cam-flash-text">✓ Product scanned!</div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -873,11 +934,15 @@ function renderScanner(){
     </button>
   </div>
   <div class="scan-area">
-    <div class="scan-icon-wrap ${scanChannel}"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg></div>
-    <div class="scan-who">Scanning as <span>${currentWorker?currentWorker.name:'—'}</span></div>
-    <div class="scan-ch-label ${scanChannel}">${scanChannel==='shopify'?'→ Shopify Store':'→ TikTok Shop'}</div>
-    <div class="scan-input-wrap"><input class="scan-input ${scanChannel}" id="scan-in" placeholder="Scan barcode or type SKU…" type="text" onkeydown="if(event.key==='Enter')doScan()" autocomplete="off" autocorrect="off" spellcheck="false"/><button class="scan-go ${scanChannel}" onclick="doScan()">SCAN</button></div>
-    <button class="demo-btn" onclick="demoScan()">⚡ Demo scan</button>
+    <div class="scan-who" style="margin-bottom:12px">Scanning as <span>${currentWorker?currentWorker.name:'—'}</span> → <span class="${scanChannel}">${scanChannel==='shopify'?'Shopify':'TikTok Shop'}</span></div>
+    <button class="big-scan-btn ${scanChannel}" onclick="openCamera()">
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Tap to scan barcode
+    </button>
+    <div class="manual-row">
+      <input id="scan-in" placeholder="Or type SKU manually…" type="text" onkeydown="if(event.key==='Enter')doScan()" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="none"/>
+      <button onclick="doScan()">Enter</button>
+    </div>
   </div>
   <div class="sec-header"><span class="sec-title">Scan history (${scanLog.length})</span><span class="sec-action" onclick="scanLog=[];saveAll();render()">Clear</span></div>
   <div class="scan-feed">${scanLog.length===0?'<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>No scans yet</div>':scanLog.slice(0,25).map(s=>`<div class="scan-entry ${s.flagged?'flagged':''}">
@@ -909,50 +974,12 @@ async function doScan(overrideFlag){
   const item=inv.find(i=>i.sku===v||i.name.toUpperCase().includes(v));
   if(!item){showToast('SKU not found: '+v,'red');return;}
   inp.value='';
-
-  // ── VALIDATION 1: Wrong channel (order mode) ──
-  if(orderMode&&!overrideFlag){
-    if(scanChannel!==orderChannel){
-      pendingScan={item,sku:v,type:'wrong-channel'};
-      showAlertModal('wrong-channel',item);return;
-    }
-    // ── VALIDATION 2: Wrong product (order mode with item list) ──
-    if(orderItems.length>0){
-      const expected=orderItems.find(oi=>oi.sku===item.sku);
-      if(!expected){
-        pendingScan={item,sku:v,type:'wrong-product'};
-        showAlertModal('wrong-product',item);return;
-      }
-    }
-  }
-
-  // ── COMMIT SCAN ──
-  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
-  const entry={
-    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
-    time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
-    workerId:currentWorker?currentWorker.id:null,
-    flagged:false,flagReason:null
-  };
-  scanLog.unshift(entry);saveAll();
-
-  // Mark order item as scanned
-  if(orderMode&&orderItems.length>0) orderScanned[item.sku]=true;
-
-  // Push to DB
-  if(isConnected){
-    pushScanToDB(entry);
-    sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
-  }
-
-  showToast(`✓ ${item.name} → ${scanChannel==='shopify'?'Shopify':'TikTok'}`,'green');
-  render();setTimeout(()=>document.getElementById('scan-in')?.focus(),80);
+  await processScan(item, overrideFlag);
 }
 
 function demoScan(){
   const item=inv[Math.floor(Math.random()*inv.length)];
-  if(document.getElementById('scan-in'))document.getElementById('scan-in').value=item.sku;
-  doScan();
+  processScan(item);
 }
 
 // ── ALERT MODAL ──
@@ -998,28 +1025,16 @@ async function overrideScan(){
   document.getElementById('alert-modal').classList.add('hidden');
   if(!pendingScan)return;
   const {item,type}=pendingScan;
-  // Commit the scan but flag it
-  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
   const flagReason=type==='wrong-channel'?'Wrong channel override':'Unexpected product override';
-  const entry={
-    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
-    time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
-    workerId:currentWorker?currentWorker.id:null,
-    flagged:true,flagReason
-  };
+  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
+  const entry={ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',workerId:currentWorker?currentWorker.id:null,flagged:true,flagReason};
   scanLog.unshift(entry);saveAll();
-  addAudit('scan',`⚠ Flagged scan by ${currentWorker?.name}: ${item.name} — ${flagReason}`);
-
-  // Push auto-alert
-  const newAlert={id:Date.now(),type:'danger',ch:scanChannel==='shopify'?'Shopify':'TikTok',msg:`⚠ ${currentWorker?.name} override: ${item.name} — ${flagReason}`};
-  alertsList.unshift(newAlert);saveAll();
-
-  if(isConnected){
-    pushScanToDB(entry);
-    sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
-  }
+  addAudit('scan','⚠ Flagged scan by '+(currentWorker?.name)+': '+item.name+' — '+flagReason);
+  alertsList.unshift({id:Date.now(),type:'danger',ch:scanChannel==='shopify'?'Shopify':'TikTok',msg:'⚠ '+(currentWorker?.name)+' override: '+item.name+' — '+flagReason});
+  saveAll();
+  if(isConnected){pushScanToDB(entry);sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});}
   pendingScan=null;
-  showToast(`⚠ Flagged: ${item.name}`,'amber');render();
+  showToast('⚠ Flagged: '+item.name,'amber');render();
 }
 
 // ── ORDER MODE ──
@@ -1270,6 +1285,203 @@ function renderAdminAuditLog(){
   ${auditLog.length===0?'<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>No actions yet</div>':
   `<div class="info-card"><div style="padding:0">${auditLog.map(e=>`<div class="audit-entry"><div class="audit-dot" style="background:${iMap[e.type]||'var(--dim)'}"></div><div class="audit-msg">${e.msg}</div><div class="audit-time">${e.time}</div></div>`).join('')}</div></div>`}
   <div style="height:20px"></div>`;
+}
+
+// ══════════════════════════════════════════
+// CAMERA BARCODE SCANNER
+// Uses BarcodeDetector API (built into Android Chrome)
+// Falls back to ZXing library for iPhone Safari
+// ══════════════════════════════════════════
+let cameraStream = null;
+let cameraActive = false;
+let barcodeDetector = null;
+let scanAnimFrame = null;
+let zxing = null;
+
+async function openCamera(){
+  // Update badge to show current channel
+  const badge = document.getElementById('cam-ch-badge');
+  if(badge){
+    badge.textContent = scanChannel==='shopify'?'Shopify':'TikTok Shop';
+    badge.className = 'cam-ch '+scanChannel;
+  }
+  document.getElementById('camera-overlay').classList.remove('hidden');
+  cameraActive = true;
+
+  try {
+    // Request rear camera
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
+      audio:false
+    });
+    const video = document.getElementById('camera-video');
+    video.srcObject = cameraStream;
+    await video.play();
+
+    // Try native BarcodeDetector first (Android Chrome, newer iOS)
+    if('BarcodeDetector' in window){
+      barcodeDetector = new BarcodeDetector({
+        formats:['ean_13','ean_8','code_128','code_39','qr_code','upc_a','upc_e','codabar','itf','data_matrix']
+      });
+      scanLoop();
+    } else {
+      // Load ZXing for iPhone Safari fallback
+      await loadZXing();
+      scanLoopZXing();
+    }
+  } catch(err){
+    closeCamera();
+    if(err.name==='NotAllowedError'){
+      showToast('Camera permission denied — use manual entry','red');
+    } else {
+      showToast('Camera not available — type SKU manually','amber');
+    }
+  }
+}
+
+async function loadZXing(){
+  if(zxing) return;
+  return new Promise((resolve)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js';
+    s.onload = ()=>{ zxing=true; resolve(); };
+    s.onerror = ()=>{ zxing=false; resolve(); };
+    document.head.appendChild(s);
+  });
+}
+
+// Native BarcodeDetector scan loop (Android Chrome)
+function scanLoop(){
+  if(!cameraActive) return;
+  const video = document.getElementById('camera-video');
+  if(!video||video.readyState<2){ scanAnimFrame=requestAnimationFrame(scanLoop); return; }
+  barcodeDetector.detect(video).then(barcodes=>{
+    if(barcodes.length>0 && cameraActive){
+      handleBarcodeScan(barcodes[0].rawValue);
+    } else {
+      scanAnimFrame = requestAnimationFrame(scanLoop);
+    }
+  }).catch(()=>{ scanAnimFrame=requestAnimationFrame(scanLoop); });
+}
+
+// ZXing fallback scan loop (iPhone Safari)
+async function scanLoopZXing(){
+  if(!cameraActive) return;
+  const video = document.getElementById('camera-video');
+  if(!video||video.readyState<2){ setTimeout(scanLoopZXing,100); return; }
+
+  // Use canvas snapshot + ZXing decode
+  try{
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video,0,0);
+
+    if(window.ZXingBrowser){
+      const hints = new Map();
+      const reader = new ZXingBrowser.BrowserMultiFormatReader(hints);
+      const result = await reader.decodeFromCanvas(canvas);
+      if(result && cameraActive){
+        handleBarcodeScan(result.getText());
+        return;
+      }
+    }
+  }catch(e){}
+
+  if(cameraActive) setTimeout(scanLoopZXing,200);
+}
+
+function handleBarcodeScan(rawValue){
+  if(!cameraActive) return;
+  cameraActive = false; // prevent double-scan
+  cancelAnimationFrame(scanAnimFrame);
+
+  // Flash success UI
+  const flash = document.getElementById('cam-flash');
+  const flashText = document.getElementById('cam-flash-text');
+
+  // Find product by barcode/SKU
+  const v = rawValue.trim().toUpperCase();
+  const item = inv.find(i=>i.sku===v||i.sku===rawValue.trim()||i.name.toUpperCase().includes(v));
+
+  if(item){
+    // Flash green
+    flashText.textContent = '✓ '+item.name;
+    flash.style.background = 'rgba(0,230,118,0.3)';
+    flash.classList.add('show');
+
+    // Vibrate if supported
+    if(navigator.vibrate) navigator.vibrate([80,40,80]);
+
+    setTimeout(()=>{
+      flash.classList.remove('show');
+      closeCamera();
+      // Process the scan
+      processScan(item);
+    }, 900);
+  } else {
+    // Flash red — not found
+    flashText.textContent = '✗ Not found: '+rawValue;
+    flash.style.background = 'rgba(255,61,61,0.3)';
+    flash.classList.add('show');
+    if(navigator.vibrate) navigator.vibrate(300);
+    setTimeout(()=>{
+      flash.classList.remove('show');
+      cameraActive = true;
+      // Resume scanning
+      if(barcodeDetector) scanLoop(); else scanLoopZXing();
+    }, 1200);
+  }
+}
+
+function closeCamera(){
+  cameraActive = false;
+  cancelAnimationFrame(scanAnimFrame);
+  if(cameraStream){
+    cameraStream.getTracks().forEach(t=>t.stop());
+    cameraStream = null;
+  }
+  const video = document.getElementById('camera-video');
+  if(video) video.srcObject = null;
+  document.getElementById('camera-overlay').classList.add('hidden');
+  document.getElementById('cam-flash').classList.remove('show');
+}
+
+// Process a confirmed scan (called from both camera and manual entry)
+async function processScan(item, overrideFlag){
+  // ── VALIDATION 1: Wrong channel (order mode) ──
+  if(orderMode&&!overrideFlag){
+    if(scanChannel!==orderChannel){
+      pendingScan={item,type:'wrong-channel'};
+      showAlertModal('wrong-channel',item);return;
+    }
+    // ── VALIDATION 2: Wrong product ──
+    if(orderItems.length>0){
+      const expected=orderItems.find(oi=>oi.sku===item.sku);
+      if(!expected){
+        pendingScan={item,type:'wrong-product'};
+        showAlertModal('wrong-product',item);return;
+      }
+    }
+  }
+
+  // ── COMMIT SCAN ──
+  item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
+  const entry={
+    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
+    time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
+    workerId:currentWorker?currentWorker.id:null,
+    flagged:false,flagReason:null
+  };
+  scanLog.unshift(entry);saveAll();
+  if(orderMode&&orderItems.length>0) orderScanned[item.sku]=true;
+  if(isConnected){
+    pushScanToDB(entry);
+    sbFetch('products?sku=eq.'+encodeURIComponent(item.sku),{method:'PATCH',body:JSON.stringify({total:item.total,shopify:item.shopify,tiktok:item.tiktok,updated_at:new Date().toISOString()})}).catch(()=>{});
+  }
+  showToast('✓ '+item.name+' → '+(scanChannel==='shopify'?'Shopify':'TikTok'),'green');
+  render();
 }
 
 // ══════════════════════════════════════════
