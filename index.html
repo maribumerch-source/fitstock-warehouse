@@ -471,13 +471,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
     </div>
   </div>
   <div class="scroll-area" id="main-content"></div>
-  <nav class="bottom-nav">
-    <button class="nav-item active" onclick="setTab('overview',this)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
-    <button class="nav-item" onclick="setTab('scanner',this)"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/></svg>Scanner</button>
-    <button class="nav-item" onclick="setTab('split',this)"><svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9h7M3 15h7M14 9h7M14 15h7"/></svg>Channels</button>
-    <button class="nav-item" onclick="setTab('allocate',this)"><svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>Allocate</button>
-    <button class="nav-item" onclick="setTab('alerts',this)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Alerts</button>
-  </nav>
+  <nav class="bottom-nav" id="bottom-nav"></nav>
 </div>
 
 <!-- ══════ ALERT MODAL (wrong channel / product) ══════ -->
@@ -570,6 +564,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   cat text not null, total int default 0,
   shopify int default 0, tiktok int default 0,
   reorder int default 5, price numeric default 0,
+  barcode text default '',
   updated_at timestamptz default now()
 );
 create table if not exists scan_log (
@@ -695,8 +690,8 @@ function startRealtime(){
 async function pushProductsToDB(){
   if(!isConnected)return;
   for(const p of inv){
-    await sbFetch('products?sku=eq.'+encodeURIComponent(p.sku),{method:'PATCH',body:JSON.stringify({name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,updated_at:new Date().toISOString()})}).catch(async()=>{
-      await sbFetch('products',{method:'POST',body:JSON.stringify([{sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0}])}).catch(()=>{});
+    await sbFetch('products?sku=eq.'+encodeURIComponent(p.sku),{method:'PATCH',body:JSON.stringify({name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||'',updated_at:new Date().toISOString()})}).catch(async()=>{
+      await sbFetch('products',{method:'POST',body:JSON.stringify([{sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||''}])}).catch(()=>{});
     });
   }
 }
@@ -715,23 +710,23 @@ function updateDbIndicator(){
 // APP STATE
 // ══════════════════════════════════════════
 const DEFAULT_PRODUCTS=[
-  {sku:"SUPP-WP-5LB", name:"Whey Protein 5lb",    cat:"supp",total:52,shopify:28,tiktok:18,reorder:10,price:64.99},
-  {sku:"SUPP-CR-300G",name:"Creatine 300g",        cat:"supp",total:70,shopify:35,tiktok:28,reorder:15,price:29.99},
-  {sku:"SUPP-PR-30SV",name:"Pre-Workout Citrus",   cat:"supp",total:40,shopify:20,tiktok:15,reorder:12,price:44.99},
-  {sku:"SUPP-AM-90CP",name:"BCAA Capsules 90ct",   cat:"supp",total:30,shopify:14,tiktok:10,reorder:8, price:34.99},
-  {sku:"APRL-TK-M",   name:"Compression Tank M",  cat:"appr",total:18,shopify:8, tiktok:6, reorder:6, price:39.99},
-  {sku:"APRL-TK-L",   name:"Compression Tank L",  cat:"appr",total:22,shopify:10,tiktok:8, reorder:6, price:39.99},
-  {sku:"APRL-SH-M",   name:"Training Shorts M",   cat:"appr",total:12,shopify:5, tiktok:4, reorder:5, price:49.99},
-  {sku:"ACCS-BB-RED", name:"Resistance Band Red", cat:"accs",total:65,shopify:30,tiktok:28,reorder:10,price:12.99},
-  {sku:"ACCS-SB-BLK", name:"Shaker Bottle 32oz",  cat:"accs",total:80,shopify:40,tiktok:30,reorder:20,price:14.99},
-  {sku:"ACCS-WW-PAIR",name:"Wrist Wraps Pair",    cat:"accs",total:28,shopify:12,tiktok:10,reorder:8, price:19.99},
+  {sku:"SUPP-WP-5LB", barcode:"", name:"Whey Protein 5lb",    cat:"supp",total:52,shopify:28,tiktok:18,reorder:10,price:64.99},
+  {sku:"SUPP-CR-300G",barcode:"", name:"Creatine 300g",        cat:"supp",total:70,shopify:35,tiktok:28,reorder:15,price:29.99},
+  {sku:"SUPP-PR-30SV",barcode:"", name:"Pre-Workout Citrus",   cat:"supp",total:40,shopify:20,tiktok:15,reorder:12,price:44.99},
+  {sku:"SUPP-AM-90CP",barcode:"", name:"BCAA Capsules 90ct",   cat:"supp",total:30,shopify:14,tiktok:10,reorder:8, price:34.99},
+  {sku:"APRL-TK-M",   barcode:"", name:"Compression Tank M",  cat:"appr",total:18,shopify:8, tiktok:6, reorder:6, price:39.99},
+  {sku:"APRL-TK-L",   barcode:"", name:"Compression Tank L",  cat:"appr",total:22,shopify:10,tiktok:8, reorder:6, price:39.99},
+  {sku:"APRL-SH-M",   barcode:"", name:"Training Shorts M",   cat:"appr",total:12,shopify:5, tiktok:4, reorder:5, price:49.99},
+  {sku:"ACCS-BB-RED", barcode:"", name:"Resistance Band Red", cat:"accs",total:65,shopify:30,tiktok:28,reorder:10,price:12.99},
+  {sku:"ACCS-SB-BLK", barcode:"", name:"Shaker Bottle 32oz",  cat:"accs",total:80,shopify:40,tiktok:30,reorder:20,price:14.99},
+  {sku:"ACCS-WW-PAIR",barcode:"", name:"Wrist Wraps Pair",    cat:"accs",total:28,shopify:12,tiktok:10,reorder:8, price:19.99},
 ];
 
 const DEFAULT_WORKERS=[
-  {id:'w1',name:'Maria R.',  pin:'1234',color:'00e676'},
-  {id:'w2',name:'James T.',  pin:'5678',color:'40c4ff'},
-  {id:'w3',name:'Lena M.',   pin:'9012',color:'ff4d8d'},
-  {id:'w4',name:'Carlos D.', pin:'3456',color:'ffab00'},
+  {id:'w1',name:'Maria R.',  pin:'1234',color:'00e676',role:'associate'},
+  {id:'w2',name:'James T.',  pin:'5678',color:'40c4ff',role:'lead'},
+  {id:'w3',name:'Lena M.',   pin:'9012',color:'ff4d8d',role:'manager'},
+  {id:'w4',name:'Carlos D.', pin:'3456',color:'ffab00',role:'associate'},
 ];
 
 let inv        = lsGet('fs_inv', DEFAULT_PRODUCTS.map(p=>({...p,unalloc:p.total-p.shopify-p.tiktok})));
@@ -768,6 +763,17 @@ function statusPill(s){const m={ok:['pill-ok','In stock'],low:['pill-low','Low']
 function countColor(s){return{ok:'green',low:'amber',out:'red'}[s];}
 function nowTime(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
 function workerInitials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function roleLabel(r){return{associate:'Associate',lead:'Lead',manager:'Manager'}[r]||'Associate';}
+function roleColor(r){return{associate:'var(--green)',lead:'var(--blue)',manager:'var(--gold)'}[r]||'var(--green)';}
+
+// Tab permissions per role
+const ROLE_TABS = {
+  associate: ['overview','scanner','split'],
+  lead:      ['overview','scanner','split','alerts'],
+  manager:   ['overview','scanner','split','alerts','allocate'],
+};
+function allowedTabs(){ return ROLE_TABS[currentWorker?.role||'associate']; }
+function canSeeTab(tab){ return allowedTabs().includes(tab); }
 
 function showToast(msg,type=''){
   const t=document.getElementById('toast');t.textContent=msg;
@@ -785,7 +791,7 @@ function rebuildWorkerList(){
       <div class="wl-avatar" style="background:#${w.color}22;color:#${w.color}">${workerInitials(w.name)}</div>
       <div style="flex:1">
         <div class="wl-worker-name">${w.name}</div>
-        <div class="wl-worker-role">Warehouse associate</div>
+        <div class="wl-worker-role" style="color:${roleColor(w.role||'associate')}">${roleLabel(w.role||'associate')}</div>
       </div>
       <div class="wl-arrow">›</div>
     </button>`).join('');
@@ -826,26 +832,23 @@ function updatePinDots(){
 function checkPin(){
   if(pinBuffer===pinTarget.pin){
     currentWorker=pinTarget;
-    // Hide all login screens
     document.getElementById('pin-screen').classList.add('hidden');
     document.getElementById('worker-login').classList.add('hidden');
-    // Show main app — force display with both style approaches for max compatibility
+    // Show main app — force display for full mobile compatibility
     const appEl = document.getElementById('app');
     appEl.style.cssText = 'display:flex !important; flex-direction:column; height:100dvh; height:100vh;';
     appEl.removeAttribute('hidden');
-    // Default to Scanner tab since that's what workers use most
+    // Build role-based nav
+    rebuildNav();
+    // Default to scanner tab
     activeTab = 'scanner';
-    document.querySelectorAll('.nav-item').forEach((b,i) => {
-      b.classList.remove('active');
-      if(i === 1) b.classList.add('active'); // Scanner is index 1
-    });
     updateDbIndicator();
-    // Small delay to ensure DOM is ready before rendering
-    setTimeout(() => {
+    setTimeout(()=>{
+      renderNav();
       render();
       showToast('Welcome, '+currentWorker.name.split(' ')[0]+'! 👋','green');
     }, 80);
-    addAudit('scan','Worker logged in: '+currentWorker.name);
+    addAudit('scan','Worker logged in: '+currentWorker.name+' ('+roleLabel(currentWorker.role||'associate')+')');
   } else {
     for(let i=0;i<4;i++) document.getElementById('pd'+i).className='pin-dot error';
     document.getElementById('pin-err').textContent='Wrong PIN — try again';
@@ -866,10 +869,36 @@ function switchWorker(){
 // ══════════════════════════════════════════
 // MAIN NAV & RENDER
 // ══════════════════════════════════════════
+
+// All tab definitions — shown only if allowed by role
+const ALL_TABS = [
+  { id:'overview',  label:'Overview',  svg:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
+  { id:'scanner',   label:'Scanner',   svg:'<path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/>' },
+  { id:'split',     label:'Channels',  svg:'<line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9h7M3 15h7M14 9h7M14 15h7"/>' },
+  { id:'alerts',    label:'Alerts',    svg:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>' },
+  { id:'allocate',  label:'Allocate',  svg:'<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>' },
+];
+
+function rebuildNav(){
+  const nav = document.getElementById('bottom-nav');
+  if(!nav||!currentWorker) return;
+  const tabs = ALL_TABS.filter(t => canSeeTab(t.id));
+  nav.innerHTML = tabs.map(t=>`
+    <button class="nav-item ${activeTab===t.id?'active':''}" onclick="setTab('${t.id}',this)">
+      <svg viewBox="0 0 24 24">${t.svg}</svg>
+      ${t.label}
+    </button>`).join('');
+  // If current activeTab not in allowed tabs, default to scanner
+  if(!canSeeTab(activeTab)){ activeTab='scanner'; rebuildNav(); }
+}
+
+function renderNav(){ rebuildNav(); }
+
 function setTab(tab,el){
+  if(!canSeeTab(tab)){ showToast('Access restricted','red'); return; }
   activeTab=tab;
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  if(el)el.classList.add('active');render();
+  rebuildNav();
+  render();
 }
 
 function render(){
@@ -883,7 +912,10 @@ function workerBarHTML(){
   if(!currentWorker)return'';
   return`<div class="worker-bar">
     <div class="worker-avatar" style="background:#${currentWorker.color}22;color:#${currentWorker.color}">${workerInitials(currentWorker.name)}</div>
-    <div class="worker-info"><div class="worker-name">${currentWorker.name}</div><div class="worker-role">Logged in · ${nowTime()}</div></div>
+    <div class="worker-info">
+      <div class="worker-name">${currentWorker.name}</div>
+      <div class="worker-role" style="color:${roleColor(currentWorker.role||'associate')}">${roleLabel(currentWorker.role||'associate')} · ${nowTime()}</div>
+    </div>
     <div class="worker-switch" onclick="switchWorker()">Switch</div>
   </div>`;
 }
@@ -970,9 +1002,13 @@ function setScanChannel(ch){
 // ══════════════════════════════════════════
 async function doScan(overrideFlag){
   const inp=document.getElementById('scan-in');if(!inp)return;
-  const v=inp.value.trim().toUpperCase();if(!v)return;
-  const item=inv.find(i=>i.sku===v||i.name.toUpperCase().includes(v));
-  if(!item){showToast('SKU not found: '+v,'red');return;}
+  const v=inp.value.trim();if(!v)return;
+  const vUp=v.toUpperCase();
+  // Match barcode first (exact), then SKU (exact), then SKU/name (partial)
+  const item=inv.find(i=>i.barcode&&i.barcode===v)
+    ||inv.find(i=>i.sku===vUp)
+    ||inv.find(i=>i.name.toUpperCase().includes(vUp));
+  if(!item){showToast('Not found: '+v,'red');return;}
   inp.value='';
   await processScan(item, overrideFlag);
 }
@@ -1151,13 +1187,24 @@ function renderAdminProducts(){
   return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Edit catalog. Tap <strong style="color:var(--gold)">Save all products</strong> to apply${isConnected?' and sync to all devices.':' (offline).'}
   </div>${draftInv.map((item,idx)=>`<div class="admin-prod-card"><div class="admin-prod-head"><span class="admin-prod-num">#${idx+1}</span><button class="admin-del-btn" onclick="draftDeleteProduct(${idx})">Delete</button></div>
   <div class="admin-field"><label>Product name</label><input type="text" value="${item.name}" oninput="draftInv[${idx}].name=this.value"/></div>
-  <div class="admin-row2"><div class="admin-field"><label>SKU</label><input type="text" value="${item.sku}" oninput="draftInv[${idx}].sku=this.value.toUpperCase()" autocorrect="off"/></div><div class="admin-field"><label>Category</label><select onchange="draftInv[${idx}].cat=this.value"><option value="supp" ${item.cat==='supp'?'selected':''}>Supplement</option><option value="appr" ${item.cat==='appr'?'selected':''}>Apparel</option><option value="accs" ${item.cat==='accs'?'selected':''}>Accessory</option></select></div></div>
-  <div class="admin-row2"><div class="admin-field"><label>Price ($)</label><input type="number" min="0" step="0.01" value="${item.price||''}" oninput="draftInv[${idx}].price=parseFloat(this.value)||0" inputmode="decimal"/></div><div class="admin-field"><label>Reorder at</label><input type="number" min="0" value="${item.reorder}" oninput="draftInv[${idx}].reorder=parseInt(this.value)||0" inputmode="numeric"/></div></div></div>`).join('')}
+  <div class="admin-row2">
+    <div class="admin-field"><label>SKU (internal code)</label><input type="text" value="${item.sku}" oninput="draftInv[${idx}].sku=this.value.toUpperCase()" autocorrect="off" placeholder="e.g. SUPP-WP-5LB"/></div>
+    <div class="admin-field"><label>Category</label><select onchange="draftInv[${idx}].cat=this.value"><option value="supp" ${item.cat==='supp'?'selected':''}>Supplement</option><option value="appr" ${item.cat==='appr'?'selected':''}>Apparel</option><option value="accs" ${item.cat==='accs'?'selected':''}>Accessory</option></select></div>
+  </div>
+  <div class="admin-field">
+    <label>📦 Barcode number (on product packaging)</label>
+    <input type="text" value="${item.barcode||''}" oninput="draftInv[${idx}].barcode=this.value.trim()" autocorrect="off" inputmode="numeric" placeholder="e.g. 012345678901 — scan or type the number under the barcode"/>
+  </div>
+  <div class="admin-row2"><div class="admin-field"><label>Price ($)</label><input type="number" min="0" step="0.01" value="${item.price||''}" oninput="draftInv[${idx}].price=parseFloat(this.value)||0" inputmode="decimal"/></div><div class="admin-field"><label>Reorder at</label><input type="number" min="0" value="${item.reorder}" oninput="draftInv[${idx}].reorder=parseInt(this.value)||0" inputmode="numeric"/></div></div>
+  <div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.6">
+    ${item.barcode?'✅ Barcode set — camera scanner will recognize this product':'⚠ No barcode — workers must type the SKU manually'}
+  </div>
+  </div>`).join('')}
   <button class="admin-add-btn" onclick="draftAddProduct()">+ Add new product</button>
   <button class="admin-save-btn" onclick="saveAdminProducts()">Save all products</button><div style="height:20px"></div>`;
 }
 
-function draftAddProduct(){draftInv.push({sku:'NEW-'+Date.now().toString(36).toUpperCase(),name:'New Product',cat:'supp',total:0,shopify:0,tiktok:0,reorder:5,price:0,unalloc:0});renderAdmin();setTimeout(()=>{const el=document.getElementById('admin-content');el.scrollTop=el.scrollHeight;},80);}
+function draftAddProduct(){draftInv.push({sku:'NEW-'+Date.now().toString(36).toUpperCase(),barcode:'',name:'New Product',cat:'supp',total:0,shopify:0,tiktok:0,reorder:5,price:0,unalloc:0});renderAdmin();setTimeout(()=>{const el=document.getElementById('admin-content');el.scrollTop=el.scrollHeight;},80);}
 function draftDeleteProduct(idx){if(!confirm(`Delete "${draftInv[idx].name}"?`))return;draftInv.splice(idx,1);renderAdmin();}
 async function saveAdminProducts(){
   for(let i=0;i<draftInv.length;i++){if(!draftInv[i].name.trim()||!draftInv[i].sku.trim()){showToast(`Product #${i+1} incomplete`,'red');return;}}
@@ -1190,31 +1237,53 @@ async function saveAdminInventory(){
 function renderAdminWorkers(){
   const COLORS=['00e676','40c4ff','ff4d8d','ffab00','ff3d3d','a78bfa','34d399','fb923c'];
   return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">
-    Manage worker accounts and PINs. Workers use their PIN to log in — no username needed.
-    Changes take effect immediately after saving.
+    Manage worker accounts, PINs, and roles. Role controls which tabs each person can see.
   </div>
-  ${draftWorkers.map((w,idx)=>`<div class="worker-roster-card">
-    <div class="roster-avatar" style="background:#${w.color}22;color:#${w.color};width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${workerInitials(w.name)}</div>
-    <div class="roster-info" style="flex:1">
-      <input type="text" value="${w.name}" oninput="draftWorkers[${idx}].name=this.value" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:6px 9px;font-size:13px;font-weight:500;color:var(--text);width:100%;margin-bottom:5px;font-family:var(--font)"/>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">PIN:</span>
-        <input type="text" value="${w.pin}" maxlength="4" oninput="draftWorkers[${idx}].pin=this.value.replace(/\D/g,'')" style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:5px 8px;font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--gold);width:64px;letter-spacing:.15em" inputmode="numeric"/>
-        <div style="display:flex;gap:4px">${COLORS.map(c=>`<div onclick="draftWorkers[${idx}].color='${c}';renderAdmin()" style="width:18px;height:18px;border-radius:50%;background:#${c};cursor:pointer;border:2px solid ${w.color===c?'#fff':'transparent'}"></div>`).join('')}</div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Role permissions</div>
+    <div style="font-size:12px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green);font-weight:700;min-width:70px">Associate</span><span style="color:var(--muted)">Overview, Scanner, Channels</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--blue);font-weight:700;min-width:70px">Lead</span><span style="color:var(--muted)">Overview, Scanner, Channels, Alerts</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--gold);font-weight:700;min-width:70px">Manager</span><span style="color:var(--muted)">All tabs including Allocate</span></div>
+    </div>
+  </div>
+
+  ${draftWorkers.map((w,idx)=>`<div class="worker-roster-card" style="flex-direction:column;align-items:stretch;gap:10px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="roster-avatar" style="background:#${w.color}22;color:#${w.color};width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${workerInitials(w.name)}</div>
+      <input type="text" value="${w.name}" oninput="draftWorkers[${idx}].name=this.value" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:7px 10px;font-size:13px;font-weight:500;color:var(--text);font-family:var(--font)"/>
+      <button class="roster-del" onclick="draftDeleteWorker(${idx})">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">PIN (4 digits)</div>
+        <input type="text" value="${w.pin}" maxlength="4" oninput="draftWorkers[${idx}].pin=this.value.replace(/\\D/g,'')" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px 10px;font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--gold);letter-spacing:.2em;text-align:center" inputmode="numeric"/>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px">Role</div>
+        <select onchange="draftWorkers[${idx}].role=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;font-weight:600;color:${{associate:'#00e676',lead:'#40c4ff',manager:'#ffd600'}[w.role||'associate']};-webkit-appearance:none">
+          <option value="associate" ${(w.role||'associate')==='associate'?'selected':''}>Associate</option>
+          <option value="lead" ${w.role==='lead'?'selected':''}>Lead</option>
+          <option value="manager" ${w.role==='manager'?'selected':''}>Manager</option>
+        </select>
       </div>
     </div>
-    <button class="roster-del" onclick="draftDeleteWorker(${idx})">×</button>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      ${COLORS.map(c=>`<div onclick="draftWorkers[${idx}].color='${c}';renderAdmin()" style="width:22px;height:22px;border-radius:50%;background:#${c};cursor:pointer;border:2px solid ${w.color===c?'#fff':'transparent'};transition:transform .1s" title="#${c}"></div>`).join('')}
+    </div>
   </div>`).join('')}
+
   <button class="admin-add-btn" onclick="draftAddWorker()">+ Add worker</button>
   <button class="admin-save-btn" onclick="saveAdminWorkers()">Save workers</button>
   <div style="height:12px"></div>
   <div style="background:var(--surface2);border-radius:var(--r-sm);padding:12px;font-size:11px;color:var(--muted);line-height:1.7">
-    <b style="color:var(--amber)">PIN rules:</b> 4 digits, numbers only. Each worker must have a unique PIN. Share PINs privately — not on paper in the warehouse.
+    <b style="color:var(--amber)">PIN rules:</b> 4 digits, numbers only. Each worker must have a unique PIN. Keep PINs private — do not share or post in the warehouse.
   </div>
   <div style="height:20px"></div>`;
 }
 
-function draftAddWorker(){draftWorkers.push({id:'w'+Date.now(),name:'New Worker',pin:'0000',color:'00e676',active:true});renderAdmin();}
+function draftAddWorker(){draftWorkers.push({id:'w'+Date.now(),name:'New Worker',pin:'0000',color:'00e676',role:'associate',active:true});renderAdmin();}
 function draftDeleteWorker(idx){if(!confirm(`Remove "${draftWorkers[idx].name}"?`))return;draftWorkers.splice(idx,1);renderAdmin();}
 async function saveAdminWorkers(){
   for(let i=0;i<draftWorkers.length;i++){
@@ -1278,7 +1347,10 @@ function renderAdminAuditLog(){
   return`<div class="sec-header"><span class="sec-title">Scan attribution</span></div>
   ${workerScans.map(w=>`<div class="worker-roster-card">
     <div class="roster-avatar" style="background:#${w.color}22;color:#${w.color};width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${workerInitials(w.name)}</div>
-    <div class="roster-info"><div class="roster-name">${w.name}</div><div class="roster-meta">${w.scans} scans this session${w.flagged>0?` · <span style="color:var(--red)">⚠ ${w.flagged} flagged</span>`:''}</div></div>
+    <div class="roster-info">
+      <div class="roster-name">${w.name}</div>
+      <div class="roster-meta" style="color:${roleColor(w.role||'associate')}">${roleLabel(w.role||'associate')} · ${w.scans} scans${w.flagged>0?` · <span style="color:var(--red)">⚠ ${w.flagged} flagged</span>`:''}</div>
+    </div>
     <div class="roster-scans">${w.scans}</div>
   </div>`).join('')}
   <div class="sec-header" style="margin-top:14px"><span class="sec-title">Admin actions (${auditLog.length})</span><span class="sec-action" onclick="auditLog=[];lsSet('fs_audit',[]);renderAdmin()">Clear</span></div>
@@ -1401,9 +1473,12 @@ function handleBarcodeScan(rawValue){
   const flash = document.getElementById('cam-flash');
   const flashText = document.getElementById('cam-flash-text');
 
-  // Find product by barcode/SKU
-  const v = rawValue.trim().toUpperCase();
-  const item = inv.find(i=>i.sku===v||i.sku===rawValue.trim()||i.name.toUpperCase().includes(v));
+  // Find product — barcode field first (exact match), then SKU, then name
+  const v = rawValue.trim();
+  const vUp = v.toUpperCase();
+  const item = inv.find(i=>i.barcode&&i.barcode===v)
+    ||inv.find(i=>i.sku===vUp)
+    ||inv.find(i=>i.name.toUpperCase().includes(vUp));
 
   if(item){
     // Flash green
