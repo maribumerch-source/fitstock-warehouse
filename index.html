@@ -589,6 +589,7 @@ html,body{height:100%;width:100%;overflow:hidden;position:fixed}
   shopify int default 0, tiktok int default 0,
   reorder int default 5, price numeric default 0,
   barcode text default '',
+  sku_tt text default '',
   updated_at timestamptz default now()
 );
 create table if not exists scan_log (
@@ -694,7 +695,7 @@ async function loadFromDB(){
   if(!isConnected)return;
   try{
     const rows=await sbFetch('products?order=name');
-    inv=rows.map(r=>({...r,unalloc:r.total-r.shopify-r.tiktok}));lsSet('fs_inv',inv);
+    inv=rows.map(r=>({...r,skuTT:r.sku_tt||'',unalloc:r.total-r.shopify-r.tiktok}));lsSet('fs_inv',inv);
     const wrows=await sbFetch('workers?order=name');
     workers=wrows;lsSet('fs_workers',workers);
     render();rebuildWorkerList();
@@ -714,8 +715,8 @@ function startRealtime(){
 async function pushProductsToDB(){
   if(!isConnected)return;
   for(const p of inv){
-    await sbFetch('products?sku=eq.'+encodeURIComponent(p.sku),{method:'PATCH',body:JSON.stringify({name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||'',updated_at:new Date().toISOString()})}).catch(async()=>{
-      await sbFetch('products',{method:'POST',body:JSON.stringify([{sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||''}])}).catch(()=>{});
+    await sbFetch('products?sku=eq.'+encodeURIComponent(p.sku),{method:'PATCH',body:JSON.stringify({name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||'',sku_tt:p.skuTT||'',updated_at:new Date().toISOString()})}).catch(async()=>{
+      await sbFetch('products',{method:'POST',body:JSON.stringify([{sku:p.sku,name:p.name,cat:p.cat,total:p.total,shopify:p.shopify,tiktok:p.tiktok,reorder:p.reorder,price:p.price||0,barcode:p.barcode||'',sku_tt:p.skuTT||''}])}).catch(()=>{});
     });
   }
 }
@@ -734,16 +735,102 @@ function updateDbIndicator(){
 // APP STATE
 // ══════════════════════════════════════════
 const DEFAULT_PRODUCTS=[
-  {sku:"SUPP-WP-5LB", barcode:"", name:"Whey Protein 5lb",    cat:"supp",total:52,shopify:28,tiktok:18,reorder:10,price:64.99},
-  {sku:"SUPP-CR-300G",barcode:"", name:"Creatine 300g",        cat:"supp",total:70,shopify:35,tiktok:28,reorder:15,price:29.99},
-  {sku:"SUPP-PR-30SV",barcode:"", name:"Pre-Workout Citrus",   cat:"supp",total:40,shopify:20,tiktok:15,reorder:12,price:44.99},
-  {sku:"SUPP-AM-90CP",barcode:"", name:"BCAA Capsules 90ct",   cat:"supp",total:30,shopify:14,tiktok:10,reorder:8, price:34.99},
-  {sku:"APRL-TK-M",   barcode:"", name:"Compression Tank M",  cat:"appr",total:18,shopify:8, tiktok:6, reorder:6, price:39.99},
-  {sku:"APRL-TK-L",   barcode:"", name:"Compression Tank L",  cat:"appr",total:22,shopify:10,tiktok:8, reorder:6, price:39.99},
-  {sku:"APRL-SH-M",   barcode:"", name:"Training Shorts M",   cat:"appr",total:12,shopify:5, tiktok:4, reorder:5, price:49.99},
-  {sku:"ACCS-BB-RED", barcode:"", name:"Resistance Band Red", cat:"accs",total:65,shopify:30,tiktok:28,reorder:10,price:12.99},
-  {sku:"ACCS-SB-BLK", barcode:"", name:"Shaker Bottle 32oz",  cat:"accs",total:80,shopify:40,tiktok:30,reorder:20,price:14.99},
-  {sku:"ACCS-WW-PAIR",barcode:"", name:"Wrist Wraps Pair",    cat:"accs",total:28,shopify:12,tiktok:10,reorder:8, price:19.99},
+  {sku:"WBEAT-3PBL-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Black 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PWH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / White 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-WH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PR-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Red 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-R-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BLU-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Blue (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBLU-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Blue 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-ORCHD-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Orchid (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PORCHD-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Orchid 3Pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-SH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Shadow (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PSH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / Shadow 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PVA-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / 3pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-BL-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBL-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL Black 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-WH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PWH-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL White 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-R-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PR-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL Red 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBWR-XS",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XS / TALL 3 pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-WH-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PR-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Red 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-RE-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BLU-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Blue (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PB-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Blue 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-ORCHD-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Orchid (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PORCHD-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Orchid 3Pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-SH-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Shadow (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PSH-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / Shadow 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBWR-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / 3pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-BL-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBL-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL Black 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-WH-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PWH-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL White 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-R-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PR-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL Red 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBWR-S",skuTT:"",barcode:"",name:"Ekko Womens BEATER - S / TALL 3 pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BL-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBL-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Black 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PWH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / White 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-WH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PR-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Red 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-R-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BLU-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Blue (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBLU-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Blue 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-ORCHD-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Orchid (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PRCHD-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Orchid 3Pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-SH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Shadow (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PSH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / Shadow 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBWR-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / 3pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-BL-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBL-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL Black 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-WH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PWH-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL White 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-R-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PR-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL Red 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBWR-M",skuTT:"",barcode:"",name:"Ekko Womens BEATER - M / TALL 3 pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BL-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBL-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Black 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PWH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / White 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-WH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PR-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Red 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-R-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BLU-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Blue (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBLU-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Blue 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-ORCHD-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Orchid (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PORCHD-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Orchid 3Pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-SH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Shadow (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PSH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / Shadow 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBWR-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / 3pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-BL-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBL-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL Black 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-WH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PWH-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL White 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-R-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PR-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL Red 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBWR-L",skuTT:"",barcode:"",name:"Ekko Womens BEATER - L / TALL 3 pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BL-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBL-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Black 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PWH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / White 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-WH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PR-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Red 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-R-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-BLU-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Blue (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBLU-XL-10",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Blue 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-ORCHD-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Orchid (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PORCHD-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Orchid 3Pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-SH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Shadow (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PSH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / Shadow 3pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"WBEAT-3PBWR-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / 3pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-BL-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL Black (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBL-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL Black 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-WH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL White (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PWH-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL White 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-R-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL Red (1) SINGLE pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PR-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL Red 3 pk",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0},
+  {sku:"TA-WBEAT-3PBWR-XL",skuTT:"",barcode:"",name:"Ekko Womens BEATER - XL / TALL 3 pk Variety (Black,White,Red)",cat:"appr",total:0,shopify:0,tiktok:0,reorder:5,price:0}
 ];
 
 const DEFAULT_WORKERS=[
@@ -1018,7 +1105,7 @@ function renderScanner(){
     <span class="scan-entry-ch ${s.ch}">${s.ch}</span>
     <div class="scan-entry-info">
       <div class="scan-entry-name">${s.name}</div>
-      <div class="scan-entry-who">👤 ${s.worker||'Unknown'}${s.flagged?`<span class="flag-badge">⚠ ${s.flagReason}</span>`:''}</div>
+      <div class="scan-entry-who">👤 ${s.worker||'Unknown'} · <span style="font-family:var(--font-mono);font-size:9px;color:var(--dim)">${s.sku}</span>${s.flagged?`<span class="flag-badge">⚠ ${s.flagReason}</span>`:''}</div>
     </div>
     <div class="scan-entry-right">
       <div class="scan-entry-count">${s.flagged?'⚠':'+1'} →${s.count}</div>
@@ -1041,9 +1128,10 @@ async function doScan(overrideFlag){
   const inp=document.getElementById('scan-in');if(!inp)return;
   const v=inp.value.trim();if(!v)return;
   const vUp=v.toUpperCase();
-  // Match barcode first (exact), then SKU (exact), then SKU/name (partial)
+  // Match order: barcode (exact) → Shopify SKU (exact) → TikTok SKU (exact) → name (partial)
   const item=inv.find(i=>i.barcode&&i.barcode===v)
     ||inv.find(i=>i.sku===vUp)
+    ||inv.find(i=>i.skuTT&&i.skuTT===vUp)
     ||inv.find(i=>i.name.toUpperCase().includes(vUp));
   if(!item){showToast('Not found: '+v,'red');return;}
   inp.value='';
@@ -1186,11 +1274,15 @@ function renderAlerts(){
 function dismissAlert(id){alertsList=alertsList.filter(a=>a.id!==id);saveAll();render();}
 
 function exportCSV(){
-  const rows=[['SKU','Product','Category','Price','Total','Shopify','TikTok','Buffer','Reorder','Status']];
-  inv.forEach(i=>rows.push([i.sku,`"${i.name}"`,catLabel(i.cat),i.price||'',i.total,i.shopify,i.tiktok,Math.max(0,i.unalloc),i.reorder,sts(i.total,i.reorder)]));
+  const rows=[['Name','Shopify SKU','TikTok SKU','Barcode','Category','Price','Total','Shopify Stock','TikTok Stock','Buffer','Reorder At','Status']];
+  inv.forEach(i=>rows.push([
+    `"${i.name}"`, i.sku, i.skuTT||'', i.barcode||'',
+    catLabel(i.cat), i.price||'', i.total, i.shopify, i.tiktok,
+    Math.max(0,i.unalloc), i.reorder, sts(i.total,i.reorder)
+  ]));
   const csv=rows.map(r=>r.join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);
-  a.download='fitstock_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  a.download='fitstock_ekko_women_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
   showToast('CSV exported','green');
 }
 
@@ -1221,27 +1313,68 @@ function renderAdmin(){document.getElementById('admin-content').innerHTML={produ
 
 // ── ADMIN PRODUCTS ──
 function renderAdminProducts(){
-  return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">Edit catalog. Tap <strong style="color:var(--gold)">Save all products</strong> to apply${isConnected?' and sync to all devices.':' (offline).'}
-  </div>${draftInv.map((item,idx)=>`<div class="admin-prod-card"><div class="admin-prod-head"><span class="admin-prod-num">#${idx+1}</span><button class="admin-del-btn" onclick="draftDeleteProduct(${idx})">Delete</button></div>
-  <div class="admin-field"><label>Product name</label><input type="text" value="${item.name}" oninput="draftInv[${idx}].name=this.value"/></div>
-  <div class="admin-row2">
-    <div class="admin-field"><label>SKU (internal code)</label><input type="text" value="${item.sku}" oninput="draftInv[${idx}].sku=this.value.toUpperCase()" autocorrect="off" placeholder="e.g. SUPP-WP-5LB"/></div>
-    <div class="admin-field"><label>Category</label><select onchange="draftInv[${idx}].cat=this.value"><option value="supp" ${item.cat==='supp'?'selected':''}>Supplement</option><option value="appr" ${item.cat==='appr'?'selected':''}>Apparel</option><option value="accs" ${item.cat==='accs'?'selected':''}>Accessory</option></select></div>
+  return`<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">
+    Edit catalog. Tap <strong style="color:var(--gold)">Save all products</strong> to apply${isConnected?' and sync to all devices.':' (offline).'}
   </div>
-  <div class="admin-field">
-    <label>📦 Barcode number (on product packaging)</label>
-    <input type="text" value="${item.barcode||''}" oninput="draftInv[${idx}].barcode=this.value.trim()" autocorrect="off" inputmode="numeric" placeholder="e.g. 012345678901 — scan or type the number under the barcode"/>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--blue-dim);border:1px solid rgba(64,196,255,.3);border-radius:var(--r);cursor:pointer;font-size:13px;font-weight:600;color:var(--blue)">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Import CSV
+      <input type="file" accept=".csv,.xlsx" style="display:none" onchange="importCSV(this)"/>
+    </label>
+    <button onclick="downloadTemplate()" style="flex:1;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;color:var(--muted);font-family:var(--font);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      CSV Template
+    </button>
   </div>
-  <div class="admin-row2"><div class="admin-field"><label>Price ($)</label><input type="number" min="0" step="0.01" value="${item.price||''}" oninput="draftInv[${idx}].price=parseFloat(this.value)||0" inputmode="decimal"/></div><div class="admin-field"><label>Reorder at</label><input type="number" min="0" value="${item.reorder}" oninput="draftInv[${idx}].reorder=parseInt(this.value)||0" inputmode="numeric"/></div></div>
-  <div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.6">
-    ${item.barcode?'✅ Barcode set — camera scanner will recognize this product':'⚠ No barcode — workers must type the SKU manually'}
-  </div>
+
+  <div id="import-status" style="font-size:12px;text-align:center;margin-bottom:10px;min-height:16px"></div>
+
+  ${draftInv.map((item,idx)=>`<div class="admin-prod-card">
+    <div class="admin-prod-head"><span class="admin-prod-num">#${idx+1} of ${draftInv.length}</span><button class="admin-del-btn" onclick="draftDeleteProduct(${idx})">Delete</button></div>
+    <div class="admin-field"><label>Product name</label><input type="text" value="${item.name.replace(/"/g,'&quot;')}" oninput="draftInv[${idx}].name=this.value"/></div>
+    <div class="admin-row2">
+      <div class="admin-field">
+        <label>🛒 Shopify SKU</label>
+        <input type="text" value="${item.sku||''}" oninput="draftInv[${idx}].sku=this.value.toUpperCase()" autocorrect="off" placeholder="e.g. WBEAT-BL-XS"/>
+      </div>
+      <div class="admin-field">
+        <label>♪ TikTok SKU</label>
+        <input type="text" value="${item.skuTT||''}" oninput="draftInv[${idx}].skuTT=this.value.toUpperCase()" autocorrect="off" placeholder="e.g. TT-12345678"/>
+      </div>
+    </div>
+    <div class="admin-field">
+      <label>📦 Barcode (number under barcode stripes)</label>
+      <input type="text" value="${item.barcode||''}" oninput="draftInv[${idx}].barcode=this.value.trim()" autocorrect="off" inputmode="numeric" placeholder="Leave blank if no barcode yet"/>
+    </div>
+    <div class="admin-row3">
+      <div class="admin-field"><label>Category</label>
+        <select onchange="draftInv[${idx}].cat=this.value">
+          <option value="supp" ${item.cat==='supp'?'selected':''}>Supplement</option>
+          <option value="appr" ${item.cat==='appr'?'selected':''}>Apparel</option>
+          <option value="accs" ${item.cat==='accs'?'selected':''}>Accessory</option>
+        </select>
+      </div>
+      <div class="admin-field"><label>Price ($)</label>
+        <input type="number" min="0" step="0.01" value="${item.price||''}" oninput="draftInv[${idx}].price=parseFloat(this.value)||0" inputmode="decimal" placeholder="0.00"/>
+      </div>
+      <div class="admin-field"><label>Reorder at</label>
+        <input type="number" min="0" value="${item.reorder||5}" oninput="draftInv[${idx}].reorder=parseInt(this.value)||0" inputmode="numeric"/>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--dim);margin-top:4px;line-height:1.6">
+      ${item.barcode?'✅ Barcode set':'⚠ No barcode — SKU entry only'} ·
+      ${item.skuTT?'✅ TikTok SKU set':'⚠ No TikTok SKU yet'}
+    </div>
   </div>`).join('')}
+
   <button class="admin-add-btn" onclick="draftAddProduct()">+ Add new product</button>
-  <button class="admin-save-btn" onclick="saveAdminProducts()">Save all products</button><div style="height:20px"></div>`;
+  <button class="admin-save-btn" onclick="saveAdminProducts()">Save all products</button>
+  <div style="height:20px"></div>`;
 }
 
-function draftAddProduct(){draftInv.push({sku:'NEW-'+Date.now().toString(36).toUpperCase(),barcode:'',name:'New Product',cat:'supp',total:0,shopify:0,tiktok:0,reorder:5,price:0,unalloc:0});renderAdmin();setTimeout(()=>{const el=document.getElementById('admin-content');el.scrollTop=el.scrollHeight;},80);}
+function draftAddProduct(){draftInv.push({sku:'NEW-'+Date.now().toString(36).toUpperCase(),skuTT:'',barcode:'',name:'New Product',cat:'appr',total:0,shopify:0,tiktok:0,reorder:5,price:0,unalloc:0});renderAdmin();setTimeout(()=>{const el=document.getElementById('admin-content');el.scrollTop=el.scrollHeight;},80);}
 function draftDeleteProduct(idx){if(!confirm(`Delete "${draftInv[idx].name}"?`))return;draftInv.splice(idx,1);renderAdmin();}
 async function saveAdminProducts(){
   for(let i=0;i<draftInv.length;i++){if(!draftInv[i].name.trim()||!draftInv[i].sku.trim()){showToast(`Product #${i+1} incomplete`,'red');return;}}
@@ -1510,11 +1643,12 @@ function handleBarcodeScan(rawValue){
   const flash = document.getElementById('cam-flash');
   const flashText = document.getElementById('cam-flash-text');
 
-  // Find product — barcode field first (exact match), then SKU, then name
+  // Find product — barcode field first (exact match), then Shopify SKU, then TikTok SKU, then name
   const v = rawValue.trim();
   const vUp = v.toUpperCase();
   const item = inv.find(i=>i.barcode&&i.barcode===v)
     ||inv.find(i=>i.sku===vUp)
+    ||inv.find(i=>i.skuTT&&i.skuTT===vUp)
     ||inv.find(i=>i.name.toUpperCase().includes(vUp));
 
   if(item){
@@ -1580,8 +1714,10 @@ async function processScan(item, overrideFlag){
 
   // ── COMMIT SCAN ──
   item[scanChannel]++;item.total++;item.unalloc=item.total-item.shopify-item.tiktok;
+  // Use channel-specific SKU for logging
+  const logSku = scanChannel==='tiktok' && item.skuTT ? item.skuTT : item.sku;
   const entry={
-    ch:scanChannel,name:item.name,sku:item.sku,count:item[scanChannel],
+    ch:scanChannel,name:item.name,sku:logSku,count:item[scanChannel],
     time:nowTime(),worker:currentWorker?currentWorker.name:'Unknown',
     workerId:currentWorker?currentWorker.id:null,
     flagged:false,flagReason:null
@@ -1594,6 +1730,101 @@ async function processScan(item, overrideFlag){
   }
   showToast('✓ '+item.name+' → '+(scanChannel==='shopify'?'Shopify':'TikTok'),'green');
   render();
+}
+
+// ── CSV IMPORT ──
+function importCSV(input){
+  const file = input.files[0]; if(!file) return;
+  const st = document.getElementById('import-status');
+  st.style.color='var(--blue)'; st.textContent='Reading file…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const lines = text.split('\n').map(l=>l.trim()).filter(l=>l);
+      if(lines.length < 2){ st.style.color='var(--red)'; st.textContent='File appears empty.'; return; }
+      // Detect header row
+      const header = lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
+      const colIdx = {
+        name:    header.findIndex(h=>h.includes('name')||h.includes('item')||h.includes('product')),
+        sku:     header.findIndex(h=>h==='sku'||h.includes('shopify sku')||h.includes('shopify_sku')),
+        skuTT:   header.findIndex(h=>h.includes('tiktok')||h.includes('tt sku')||h.includes('tt_sku')),
+        barcode: header.findIndex(h=>h.includes('barcode')),
+        cat:     header.findIndex(h=>h.includes('cat')||h.includes('category')||h.includes('type')),
+        price:   header.findIndex(h=>h.includes('price')),
+        shopify: header.findIndex(h=>h.includes('shopify stock')||h.includes('shopify_stock')||h==='shopify'),
+        tiktok:  header.findIndex(h=>h.includes('tiktok stock')||h.includes('tiktok_stock')||h==='tiktok'),
+        reorder: header.findIndex(h=>h.includes('reorder')),
+        total:   header.findIndex(h=>h==='total'||h.includes('total stock')),
+      };
+      // Must have at least name and sku
+      if(colIdx.name < 0){ st.style.color='var(--red)'; st.textContent='No "Name" or "Item" column found.'; return; }
+      if(colIdx.sku < 0){ st.style.color='var(--red)'; st.textContent='No "SKU" column found.'; return; }
+
+      let added=0, updated=0, skipped=0;
+      const oldMap={}; draftInv.forEach(i=>oldMap[i.sku]=i);
+
+      for(let i=1;i<lines.length;i++){
+        // Parse CSV row respecting quoted fields
+        const cols = parseCSVLine(lines[i]);
+        const name = (cols[colIdx.name]||'').replace(/"/g,'').trim();
+        const sku  = (cols[colIdx.sku]||'').replace(/"/g,'').trim().toUpperCase();
+        if(!name || !sku){ skipped++; continue; }
+        const catRaw = colIdx.cat>=0 ? (cols[colIdx.cat]||'').toLowerCase() : '';
+        const cat = catRaw.includes('supp')||catRaw.includes('protein')||catRaw.includes('creatine') ? 'supp'
+                  : catRaw.includes('accs')||catRaw.includes('accessory') ? 'accs' : 'appr';
+        const existing = oldMap[sku];
+        const prod = {
+          sku,
+          skuTT:   colIdx.skuTT>=0  ? (cols[colIdx.skuTT]||'').replace(/"/g,'').trim() : (existing?.skuTT||''),
+          barcode: colIdx.barcode>=0 ? (cols[colIdx.barcode]||'').replace(/"/g,'').trim() : (existing?.barcode||''),
+          name,cat,
+          price:   colIdx.price>=0   ? parseFloat((cols[colIdx.price]||'0').replace(/[^0-9.]/g,''))||0 : (existing?.price||0),
+          shopify: colIdx.shopify>=0  ? parseInt(cols[colIdx.shopify])||0 : (existing?.shopify||0),
+          tiktok:  colIdx.tiktok>=0   ? parseInt(cols[colIdx.tiktok])||0  : (existing?.tiktok||0),
+          reorder: colIdx.reorder>=0  ? parseInt(cols[colIdx.reorder])||5  : (existing?.reorder||5),
+          total:   0, unalloc:0
+        };
+        prod.total = colIdx.total>=0 ? parseInt(cols[colIdx.total])||0 : prod.shopify+prod.tiktok;
+        prod.unalloc = prod.total - prod.shopify - prod.tiktok;
+        if(existing){ Object.assign(existing, prod); updated++; }
+        else { draftInv.push(prod); oldMap[sku]=prod; added++; }
+      }
+      st.style.color='var(--green)';
+      st.textContent=`✓ Import complete — ${added} added, ${updated} updated, ${skipped} skipped`;
+      renderAdmin();
+    } catch(err){
+      st.style.color='var(--red)';
+      st.textContent='Error reading file: '+err.message;
+    }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line){
+  const result=[]; let cur=''; let inQuote=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){ inQuote=!inQuote; }
+    else if(ch===','&&!inQuote){ result.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  result.push(cur);
+  return result;
+}
+
+function downloadTemplate(){
+  const header = ['Name','Shopify SKU','TikTok SKU','Barcode','Category','Price','Shopify Stock','TikTok Stock','Reorder At'];
+  const sample = [
+    ['Ekko Womens BEATER - XS / Black 3pk','WBEAT-3PBL-XS','','','appr','0','0','0','5'],
+    ['Ekko Womens BEATER - XS / White 3pk','WBEAT-3PWH-XS','','','appr','0','0','0','5'],
+  ];
+  const csv=[header,...sample].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv,'+encodeURIComponent(csv);
+  a.download='fitstock_import_template.csv';a.click();
+  showToast('Template downloaded','green');
 }
 
 // ══════════════════════════════════════════
